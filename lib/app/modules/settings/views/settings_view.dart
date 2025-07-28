@@ -3,8 +3,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 
 import '../../../theme/neo_brutalism_theme.dart';
-import '../../../widgets/neo_button.dart';
-import '../../../widgets/neo_card.dart';
 import '../controllers/settings_controller.dart';
 
 class SettingsView extends GetView<SettingsController> {
@@ -12,40 +10,55 @@ class SettingsView extends GetView<SettingsController> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: NeoBrutalismTheme.primaryWhite,
+      backgroundColor:
+          isDark
+              ? NeoBrutalismTheme.darkBackground
+              : NeoBrutalismTheme.primaryWhite,
       appBar: AppBar(
         title: const Text('SETTINGS'),
-        backgroundColor: NeoBrutalismTheme.accentPurple,
+        backgroundColor:
+            isDark
+                ? NeoBrutalismTheme.accentPurple
+                : NeoBrutalismTheme.accentPurple,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildGeneralSection(),
+          _buildGeneralSection(isDark),
           const SizedBox(height: 24),
-          _buildNotificationSection(),
+          _buildNotificationSection(isDark),
           const SizedBox(height: 24),
-          _buildSecuritySection(),
+          _buildDataSection(isDark),
           const SizedBox(height: 24),
-          _buildDataSection(),
-          const SizedBox(height: 24),
-          _buildAboutSection(),
+          _buildAboutSection(isDark),
         ],
       ),
     );
   }
 
-  Widget _buildGeneralSection() {
-    return NeoCard(
+  Widget _buildGeneralSection(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: NeoBrutalismTheme.neoBox(isDark: isDark),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'GENERAL',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
+            ),
           ),
           const SizedBox(height: 16),
-          _buildCurrencySelector(),
+          _buildCurrencySelector(isDark),
           const SizedBox(height: 16),
           Obx(
             () => _buildToggleTile(
@@ -54,6 +67,7 @@ class SettingsView extends GetView<SettingsController> {
               controller.enableDarkMode.value,
               (value) => controller.toggleDarkMode(value),
               Icons.dark_mode,
+              isDark,
             ),
           ),
         ],
@@ -61,38 +75,62 @@ class SettingsView extends GetView<SettingsController> {
     ).animate().fadeIn().slideY(begin: 0.2, end: 0);
   }
 
-  Widget _buildCurrencySelector() {
+  Widget _buildCurrencySelector(bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            const Icon(Icons.attach_money),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Currency',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        Expanded(
+          child: Row(
+            children: [
+              Icon(
+                Icons.attach_money,
+                color: isDark ? NeoBrutalismTheme.darkText : null,
+              ),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Currency',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? NeoBrutalismTheme.darkText : null,
+                      ),
+                    ),
+                    Obx(
+                      () => Text(
+                        controller.currency.value,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                Obx(
-                  () => Text(
-                    controller.currency.value,
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  ),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
         Obx(
           () => Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: NeoBrutalismTheme.neoBox(),
+            decoration: NeoBrutalismTheme.neoBox(isDark: isDark),
             child: DropdownButton<String>(
               value: controller.currency.value,
               underline: const SizedBox(),
+              dropdownColor:
+                  isDark
+                      ? NeoBrutalismTheme.darkSurface
+                      : NeoBrutalismTheme.primaryWhite,
+              style: TextStyle(
+                color:
+                    isDark
+                        ? NeoBrutalismTheme.darkText
+                        : NeoBrutalismTheme.primaryBlack,
+              ),
               onChanged: (value) {
                 if (value != null) {
                   controller.updateCurrency(value);
@@ -114,14 +152,23 @@ class SettingsView extends GetView<SettingsController> {
     );
   }
 
-  Widget _buildNotificationSection() {
-    return NeoCard(
+  Widget _buildNotificationSection(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: NeoBrutalismTheme.neoBox(isDark: isDark),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'NOTIFICATIONS',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
+            ),
           ),
           const SizedBox(height: 16),
           Obx(
@@ -131,6 +178,7 @@ class SettingsView extends GetView<SettingsController> {
               controller.enableNotifications.value,
               (value) => controller.toggleNotifications(value),
               Icons.notifications,
+              isDark,
             ),
           ),
         ],
@@ -138,38 +186,23 @@ class SettingsView extends GetView<SettingsController> {
     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0);
   }
 
-  Widget _buildSecuritySection() {
-    return NeoCard(
+  Widget _buildDataSection(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: NeoBrutalismTheme.neoBox(isDark: isDark),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'SECURITY',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 16),
-          Obx(
-            () => _buildToggleTile(
-              'Biometric Lock',
-              'Use fingerprint or face ID',
-              controller.enableBiometric.value,
-              (value) => controller.toggleBiometric(value),
-              Icons.fingerprint,
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0);
-  }
-
-  Widget _buildDataSection() {
-    return NeoCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
+          Text(
             'DATA MANAGEMENT',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
+            ),
           ),
           const SizedBox(height: 16),
           _buildActionTile(
@@ -177,6 +210,7 @@ class SettingsView extends GetView<SettingsController> {
             'Save your data to file',
             Icons.download,
             () => controller.exportData(),
+            isDark: isDark,
           ),
           const SizedBox(height: 12),
           _buildActionTile(
@@ -184,23 +218,32 @@ class SettingsView extends GetView<SettingsController> {
             'Restore from backup',
             Icons.upload,
             () => controller.importData(),
+            isDark: isDark,
           ),
           const SizedBox(height: 12),
           _buildActionTile(
             'Clear All Data',
             'Delete all expenses and todos',
             Icons.delete_forever,
-            () => _showClearDataDialog(),
+            () => _showClearDataDialog(isDark),
             isDestructive: true,
+            isDark: isDark,
           ),
         ],
       ),
     ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2, end: 0);
   }
 
-  Widget _buildAboutSection() {
-    return NeoCard(
-      color: NeoBrutalismTheme.accentYellow,
+  Widget _buildAboutSection(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: NeoBrutalismTheme.neoBox(
+        color: NeoBrutalismTheme.accentYellow,
+        borderColor:
+            isDark
+                ? NeoBrutalismTheme.primaryWhite
+                : NeoBrutalismTheme.primaryBlack,
+      ),
       child: Column(
         children: [
           Container(
@@ -208,6 +251,10 @@ class SettingsView extends GetView<SettingsController> {
             height: 80,
             decoration: NeoBrutalismTheme.neoBox(
               color: NeoBrutalismTheme.primaryBlack,
+              borderColor:
+                  isDark
+                      ? NeoBrutalismTheme.primaryWhite
+                      : NeoBrutalismTheme.primaryBlack,
             ),
             child: const Icon(
               Icons.rocket_launch,
@@ -217,25 +264,37 @@ class SettingsView extends GetView<SettingsController> {
           ),
           const SizedBox(height: 16),
           const Text(
-            'NEO TRACKER',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+            'MAGIC LEDGER',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: Colors.black,
+            ),
           ),
           const Text(
             'Version 1.0.0',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.black,
+            ),
           ),
           const SizedBox(height: 16),
           const Text(
             'Track. Save. Achieve.',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+            ),
           ),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildSocialButton(Icons.language, () {}),
-              _buildSocialButton(Icons.email, () {}),
-              _buildSocialButton(Icons.star, () {}),
+              _buildSocialButton(Icons.language, () {}, isDark),
+              _buildSocialButton(Icons.email, () {}, isDark),
+              _buildSocialButton(Icons.star, () {}, isDark),
             ],
           ),
         ],
@@ -249,37 +308,42 @@ class SettingsView extends GetView<SettingsController> {
     bool value,
     Function(bool) onChanged,
     IconData icon,
+    bool isDark,
   ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Icon(icon),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+        Expanded(
+          child: Row(
+            children: [
+              Icon(icon, color: isDark ? NeoBrutalismTheme.darkText : null),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? NeoBrutalismTheme.darkText : null,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  subtitle,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
-        Switch(
-          value: value,
-          onChanged: onChanged,
-          activeColor: NeoBrutalismTheme.primaryBlack,
-        ),
+        Switch(value: value, onChanged: onChanged),
       ],
     );
   }
@@ -290,6 +354,7 @@ class SettingsView extends GetView<SettingsController> {
     IconData icon,
     VoidCallback onTap, {
     bool isDestructive = false,
+    required bool isDark,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -299,46 +364,77 @@ class SettingsView extends GetView<SettingsController> {
           color:
               isDestructive
                   ? Colors.red.shade50
-                  : NeoBrutalismTheme.primaryWhite,
+                  : (isDark
+                      ? NeoBrutalismTheme.darkSurface
+                      : NeoBrutalismTheme.primaryWhite),
+          borderColor:
+              isDark
+                  ? NeoBrutalismTheme.primaryWhite
+                  : NeoBrutalismTheme.primaryBlack,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Icon(icon, color: isDestructive ? Colors.red : null),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: isDestructive ? Colors.red : null,
-                      ),
+            Expanded(
+              child: Row(
+                children: [
+                  Icon(
+                    icon,
+                    color:
+                        isDestructive
+                            ? Colors.red
+                            : (isDark ? NeoBrutalismTheme.darkText : null),
+                  ),
+                  const SizedBox(width: 12),
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color:
+                                isDestructive
+                                    ? Colors.red
+                                    : (isDark
+                                        ? NeoBrutalismTheme.darkText
+                                        : null),
+                          ),
+                        ),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color:
+                                isDestructive
+                                    ? Colors.red[300]
+                                    : (isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600]),
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color:
-                            isDestructive ? Colors.red[300] : Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-            Icon(Icons.chevron_right, color: isDestructive ? Colors.red : null),
+            Icon(
+              Icons.chevron_right,
+              color:
+                  isDestructive
+                      ? Colors.red
+                      : (isDark ? NeoBrutalismTheme.darkText : null),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSocialButton(IconData icon, VoidCallback onTap) {
+  Widget _buildSocialButton(IconData icon, VoidCallback onTap, bool isDark) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -346,20 +442,28 @@ class SettingsView extends GetView<SettingsController> {
         height: 48,
         decoration: NeoBrutalismTheme.neoBox(
           color: NeoBrutalismTheme.primaryWhite,
+          borderColor: Colors.black,
         ),
-        child: Icon(icon),
+        child: Icon(icon, color: Colors.black),
       ),
     );
   }
 
-  void _showClearDataDialog() {
+  void _showClearDataDialog(bool isDark) {
     Get.dialog(
       Dialog(
         backgroundColor: Colors.transparent,
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: NeoBrutalismTheme.neoBoxRounded(
-            color: NeoBrutalismTheme.primaryWhite,
+            color:
+                isDark
+                    ? NeoBrutalismTheme.darkSurface
+                    : NeoBrutalismTheme.primaryWhite,
+            borderColor:
+                isDark
+                    ? NeoBrutalismTheme.primaryWhite
+                    : NeoBrutalismTheme.primaryBlack,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -367,7 +471,13 @@ class SettingsView extends GetView<SettingsController> {
               Container(
                 width: 60,
                 height: 60,
-                decoration: NeoBrutalismTheme.neoBox(color: Colors.red),
+                decoration: NeoBrutalismTheme.neoBox(
+                  color: Colors.red,
+                  borderColor:
+                      isDark
+                          ? NeoBrutalismTheme.primaryWhite
+                          : NeoBrutalismTheme.primaryBlack,
+                ),
                 child: const Icon(
                   Icons.warning,
                   color: NeoBrutalismTheme.primaryWhite,
@@ -375,30 +485,58 @@ class SettingsView extends GetView<SettingsController> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'CLEAR ALL DATA?',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color:
+                      isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack,
+                ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'This will delete all your expenses, todos, and receipts. This action cannot be undone!',
-                style: TextStyle(fontSize: 16),
+                style: TextStyle(
+                  fontSize: 16,
+                  color:
+                      isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
               Row(
                 children: [
                   Expanded(
-                    child: NeoButton(
-                      text: 'CANCEL',
+                    child: ElevatedButton(
                       onPressed: () => Get.back(),
-                      color: NeoBrutalismTheme.primaryWhite,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            isDark
+                                ? NeoBrutalismTheme.darkSurface
+                                : NeoBrutalismTheme.primaryWhite,
+                        foregroundColor:
+                            isDark
+                                ? NeoBrutalismTheme.darkText
+                                : NeoBrutalismTheme.primaryBlack,
+                        side: BorderSide(
+                          color:
+                              isDark
+                                  ? NeoBrutalismTheme.primaryWhite
+                                  : NeoBrutalismTheme.primaryBlack,
+                          width: 3,
+                        ),
+                      ),
+                      child: const Text('CANCEL'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: NeoButton(
-                      text: 'DELETE ALL',
+                    child: ElevatedButton(
                       onPressed: () async {
                         await controller.clearAllData();
                         Get.back();
@@ -412,8 +550,15 @@ class SettingsView extends GetView<SettingsController> {
                           borderColor: NeoBrutalismTheme.primaryBlack,
                         );
                       },
-                      color: Colors.red,
-                      textColor: NeoBrutalismTheme.primaryWhite,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: NeoBrutalismTheme.primaryWhite,
+                        side: const BorderSide(
+                          color: NeoBrutalismTheme.primaryBlack,
+                          width: 3,
+                        ),
+                      ),
+                      child: const Text('DELETE ALL'),
                     ),
                   ),
                 ],

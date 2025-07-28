@@ -1,49 +1,30 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
-import '../../../data/models/category_model.dart';
-import '../../../data/models/expense_model.dart';
+import '../../../data/models/income_model.dart';
 import '../../../theme/neo_brutalism_theme.dart';
 import '../../../widgets/neo_button.dart';
 import '../../../widgets/neo_card.dart';
-import '../../category/controllers/category_controller.dart';
-import '../controllers/expense_controller.dart';
+import '../controllers/income_controller.dart';
 
-class ExpenseDetailView extends StatelessWidget {
-  final ExpenseModel expense = Get.arguments;
-  final CategoryController categoryController = Get.find();
-  final ExpenseController expenseController = Get.find();
+class IncomeDetailView extends StatelessWidget {
+  final IncomeModel income = Get.arguments;
+  final IncomeController incomeController = Get.find();
 
-  ExpenseDetailView({super.key});
+  IncomeDetailView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Safely get category with fallback
-    final category = _getCategory();
-    final categoryIcon = category?.icon ?? '💰';
-    final categoryName = category?.name ?? 'Unknown';
-    final categoryColor = category?.colorValue ?? Colors.grey;
-
     return Scaffold(
       backgroundColor: NeoBrutalismTheme.primaryWhite,
-      appBar: _buildAppBar(context, categoryColor),
+      appBar: _buildAppBar(context),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildMainInfo(categoryColor, categoryIcon, categoryName),
+          _buildMainInfo(),
           const SizedBox(height: 24),
           _buildDetailsSection(),
-          if (expense.tags != null && expense.tags!.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            _buildTagsSection(),
-          ],
-          if (expense.receiptPath != null) ...[
-            const SizedBox(height: 24),
-            _buildReceiptSection(),
-          ],
           const SizedBox(height: 32),
           _buildActionButtons(context),
         ],
@@ -51,27 +32,13 @@ class ExpenseDetailView extends StatelessWidget {
     );
   }
 
-  CategoryModel? _getCategory() {
-    try {
-      return categoryController.categories.firstWhere(
-        (c) => c.id == expense.categoryId,
-      );
-    } catch (e) {
-      // Return first category as fallback
-      if (categoryController.categories.isNotEmpty) {
-        return categoryController.categories.first;
-      }
-      return null;
-    }
-  }
-
-  AppBar _buildAppBar(BuildContext context, Color categoryColor) {
+  AppBar _buildAppBar(BuildContext context) {
     return AppBar(
       title: const Text(
-        'EXPENSE DETAILS',
+        'INCOME DETAILS',
         style: TextStyle(fontWeight: FontWeight.w900),
       ),
-      backgroundColor: categoryColor,
+      backgroundColor: NeoBrutalismTheme.accentGreen,
       foregroundColor: NeoBrutalismTheme.primaryBlack,
       elevation: 0,
       actions: [
@@ -87,16 +54,12 @@ class ExpenseDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildMainInfo(
-    Color categoryColor,
-    String categoryIcon,
-    String categoryName,
-  ) {
+  Widget _buildMainInfo() {
     return NeoCard(
-      color: categoryColor,
+      color: NeoBrutalismTheme.accentGreen,
       child: Column(
         children: [
-          _buildExpenseHeader(categoryIcon, categoryName),
+          _buildIncomeHeader(),
           const SizedBox(height: 16),
           _buildDateDisplay(),
         ],
@@ -104,7 +67,7 @@ class ExpenseDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildExpenseHeader(String categoryIcon, String categoryName) {
+  Widget _buildIncomeHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -113,7 +76,7 @@ class ExpenseDetailView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                expense.title,
+                income.title,
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
@@ -125,11 +88,15 @@ class ExpenseDetailView extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Text(categoryIcon, style: const TextStyle(fontSize: 24)),
+                  const Icon(
+                    Icons.account_balance_wallet,
+                    size: 24,
+                    color: NeoBrutalismTheme.primaryBlack,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      categoryName,
+                      income.source,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -154,14 +121,14 @@ class ExpenseDetailView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Text(
-          '-₹${expense.amount.toStringAsFixed(2)}',
+          '+₹${income.amount.toStringAsFixed(2)}',
           style: const TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w900,
             color: NeoBrutalismTheme.primaryBlack,
           ),
         ),
-        if (expense.isRecurring) ...[
+        if (income.isRecurring) ...[
           const SizedBox(height: 4),
           _buildRecurringBadge(),
         ],
@@ -178,7 +145,7 @@ class ExpenseDetailView extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        expense.recurringType?.toUpperCase() ?? 'RECURRING',
+        income.recurringType?.toUpperCase() ?? 'RECURRING',
         style: const TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.bold,
@@ -205,7 +172,7 @@ class ExpenseDetailView extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            _formatDate(expense.date),
+            _formatDate(income.date),
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -231,18 +198,16 @@ class ExpenseDetailView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          if (expense.description != null && expense.description!.isNotEmpty)
-            _buildDetailRow('Description', expense.description!),
-          if (expense.location != null && expense.location!.isNotEmpty)
-            _buildDetailRow('Location', expense.location!),
-          _buildDetailRow('Amount', '₹${expense.amount.toStringAsFixed(2)}'),
+          if (income.description != null && income.description!.isNotEmpty)
+            _buildDetailRow('Description', income.description!),
+          _buildDetailRow('Source', income.source),
           _buildDetailRow(
             'Type',
-            expense.isRecurring ? 'Recurring' : 'One-time',
+            income.isRecurring ? 'Recurring' : 'One-time',
           ),
-          if (expense.isRecurring)
+          if (income.isRecurring)
             _buildDetailRow('Frequency', _getFormattedFrequency()),
-          _buildDetailRow('Created', _formatDateTime(expense.date)),
+          _buildDetailRow('Created', _formatDateTime(income.date)),
         ],
       ),
     );
@@ -280,143 +245,6 @@ class ExpenseDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildTagsSection() {
-    return NeoCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'TAGS',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: NeoBrutalismTheme.primaryBlack,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children:
-                expense.tags!
-                    .map(
-                      (tag) => Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: NeoBrutalismTheme.neoBox(
-                          color: NeoBrutalismTheme.accentYellow,
-                        ),
-                        child: Text(
-                          tag.toUpperCase(),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: NeoBrutalismTheme.primaryBlack,
-                          ),
-                        ),
-                      ),
-                    )
-                    .toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReceiptSection() {
-    return NeoCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'RECEIPT',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: NeoBrutalismTheme.primaryBlack,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.fullscreen),
-                onPressed: () => _showFullScreenReceipt(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          GestureDetector(
-            onTap: () => _showFullScreenReceipt(),
-            child: Container(
-              height: 300,
-              width: double.infinity,
-              decoration: NeoBrutalismTheme.neoBox(
-                color: NeoBrutalismTheme.primaryWhite,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  File(expense.receiptPath!),
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[200],
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.broken_image,
-                            size: 64,
-                            color: Colors.grey,
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Failed to load image',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showFullScreenReceipt() {
-    Get.to(
-      () => Scaffold(
-        backgroundColor: Colors.black,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.white),
-        ),
-        body: Center(
-          child: InteractiveViewer(
-            child: Image.file(
-              File(expense.receiptPath!),
-              errorBuilder: (context, error, stackTrace) {
-                return const Icon(
-                  Icons.broken_image,
-                  color: Colors.white,
-                  size: 64,
-                );
-              },
-            ),
-          ),
-        ),
-      ),
-      transition: Transition.fadeIn,
-    );
-  }
-
   Widget _buildActionButtons(BuildContext context) {
     return Column(
       children: [
@@ -425,7 +253,7 @@ class ExpenseDetailView extends StatelessWidget {
             Expanded(
               child: NeoButton(
                 text: 'DUPLICATE',
-                onPressed: _duplicateExpense,
+                onPressed: _duplicateIncome,
                 color: NeoBrutalismTheme.accentBlue,
                 icon: Icons.copy,
               ),
@@ -434,8 +262,8 @@ class ExpenseDetailView extends StatelessWidget {
             Expanded(
               child: NeoButton(
                 text: 'SHARE',
-                onPressed: () => _shareExpense(context),
-                color: NeoBrutalismTheme.accentGreen,
+                onPressed: () => _shareIncome(context),
+                color: NeoBrutalismTheme.accentPurple,
                 icon: Icons.share,
               ),
             ),
@@ -445,9 +273,9 @@ class ExpenseDetailView extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: NeoButton(
-            text: 'EDIT EXPENSE',
+            text: 'EDIT INCOME',
             onPressed: _navigateToEdit,
-            color: NeoBrutalismTheme.accentOrange,
+            color: NeoBrutalismTheme.accentGreen,
             icon: Icons.edit,
           ),
         ),
@@ -456,33 +284,27 @@ class ExpenseDetailView extends StatelessWidget {
   }
 
   void _navigateToEdit() {
-    Get.toNamed(
-      '/add-expense',
-      arguments: {'expense': expense, 'isEdit': true},
-    );
+    Get.toNamed('/add-income', arguments: {'income': income, 'isEdit': true});
   }
 
-  void _duplicateExpense() {
-    final duplicatedExpense = ExpenseModel(
+  void _duplicateIncome() {
+    final duplicatedIncome = IncomeModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      title: '${expense.title} (Copy)',
-      amount: expense.amount,
-      categoryId: expense.categoryId,
+      title: '${income.title} (Copy)',
+      amount: income.amount,
+      source: income.source,
       date: DateTime.now(),
-      description: expense.description,
-      location: expense.location,
-      tags: expense.tags,
-      receiptPath: expense.receiptPath,
-      isRecurring: expense.isRecurring,
-      recurringType: expense.recurringType,
+      description: income.description,
+      isRecurring: income.isRecurring,
+      recurringType: income.recurringType,
     );
 
-    expenseController.addExpense(duplicatedExpense);
+    incomeController.addIncome(duplicatedIncome);
 
     Get.snackbar(
-      'Expense Duplicated',
-      'A copy of "${expense.title}" has been created',
-      backgroundColor: NeoBrutalismTheme.accentOrange,
+      'Income Duplicated',
+      'A copy of "${income.title}" has been created',
+      backgroundColor: NeoBrutalismTheme.accentGreen,
       colorText: NeoBrutalismTheme.primaryBlack,
       borderWidth: 3,
       borderColor: NeoBrutalismTheme.primaryBlack,
@@ -490,7 +312,7 @@ class ExpenseDetailView extends StatelessWidget {
       mainButton: TextButton(
         onPressed: () {
           Get.back();
-          Get.to(() => ExpenseDetailView(), arguments: duplicatedExpense);
+          Get.to(() => IncomeDetailView(), arguments: duplicatedIncome);
         },
         child: const Text(
           'VIEW',
@@ -503,18 +325,15 @@ class ExpenseDetailView extends StatelessWidget {
     );
   }
 
-  void _shareExpense(BuildContext context) {
-    final category = _getCategory();
+  void _shareIncome(BuildContext context) {
     final shareText =
         '''
-Expense: ${expense.title}
-Amount: ₹${expense.amount.toStringAsFixed(2)}
-Category: ${category?.name ?? 'Unknown'}
-Date: ${_formatDate(expense.date)}
-Type: ${expense.isRecurring ? 'Recurring (${expense.recurringType})' : 'One-time'}
-${expense.description != null ? '\nDescription: ${expense.description}' : ''}
-${expense.location != null ? 'Location: ${expense.location}' : ''}
-${expense.tags != null && expense.tags!.isNotEmpty ? '\nTags: ${expense.tags!.join(', ')}' : ''}
+Income: ${income.title}
+Amount: ₹${income.amount.toStringAsFixed(2)}
+Source: ${income.source}
+Date: ${_formatDate(income.date)}
+Type: ${income.isRecurring ? 'Recurring (${income.recurringType})' : 'One-time'}
+${income.description != null ? '\nDescription: ${income.description}' : ''}
 
 Shared from Magic Ledger App
     '''.trim();
@@ -523,16 +342,16 @@ Shared from Magic Ledger App
     Clipboard.setData(ClipboardData(text: shareText));
 
     Get.snackbar(
-      'Share Expense',
-      'Expense details copied to clipboard',
-      backgroundColor: NeoBrutalismTheme.accentGreen,
-      colorText: NeoBrutalismTheme.primaryBlack,
+      'Share Income',
+      'Income details copied to clipboard',
+      backgroundColor: NeoBrutalismTheme.accentPurple,
+      colorText: NeoBrutalismTheme.primaryWhite,
       borderWidth: 3,
       borderColor: NeoBrutalismTheme.primaryBlack,
       duration: const Duration(seconds: 2),
       icon: const Icon(
         Icons.check_circle,
-        color: NeoBrutalismTheme.primaryBlack,
+        color: NeoBrutalismTheme.primaryWhite,
       ),
     );
   }
@@ -556,7 +375,7 @@ Shared from Magic Ledger App
               ),
               const SizedBox(height: 16),
               const Text(
-                'DELETE EXPENSE?',
+                'DELETE INCOME?',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
@@ -565,7 +384,7 @@ Shared from Magic Ledger App
               ),
               const SizedBox(height: 12),
               Text(
-                'Are you sure you want to delete "${expense.title}"?',
+                'Are you sure you want to delete "${income.title}"?',
                 style: const TextStyle(
                   fontSize: 16,
                   color: NeoBrutalismTheme.primaryBlack,
@@ -598,12 +417,12 @@ Shared from Magic Ledger App
                     child: NeoButton(
                       text: 'DELETE',
                       onPressed: () {
-                        expenseController.deleteExpense(expense.id);
+                        incomeController.deleteIncome(income.id);
                         Get.back(); // Close dialog
                         Get.back(); // Go back to previous screen
                         Get.snackbar(
-                          'Expense Deleted',
-                          '${expense.title} has been removed',
+                          'Income Deleted',
+                          '${income.title} has been removed',
                           backgroundColor: Colors.red,
                           colorText: NeoBrutalismTheme.primaryWhite,
                           borderWidth: 3,
@@ -639,9 +458,9 @@ Shared from Magic Ledger App
   }
 
   String _getFormattedFrequency() {
-    if (expense.recurringType == null) return 'N/A';
+    if (income.recurringType == null) return 'N/A';
 
-    switch (expense.recurringType!.toLowerCase()) {
+    switch (income.recurringType!.toLowerCase()) {
       case 'daily':
         return 'Every Day';
       case 'weekly':
@@ -651,7 +470,7 @@ Shared from Magic Ledger App
       case 'yearly':
         return 'Every Year';
       default:
-        return expense.recurringType!.toUpperCase();
+        return income.recurringType!.toUpperCase();
     }
   }
 }

@@ -3,11 +3,13 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 
 import '../../../data/models/expense_model.dart';
+import '../../../data/models/income_model.dart';
 import '../../../data/models/todo_model.dart';
 import '../../../theme/neo_brutalism_theme.dart';
 import '../../../widgets/neo_button.dart';
 import '../../../widgets/neo_card.dart';
 import '../../analytics/views/analytics_view.dart';
+import '../../category/controllers/category_controller.dart';
 import '../../expense/views/expense_view.dart';
 import '../../todo/views/todo_view.dart';
 import '../controllers/home_controller.dart';
@@ -17,36 +19,48 @@ class HomeView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
+    final categoryController = Get.find<CategoryController>();
+
     return Scaffold(
       backgroundColor: NeoBrutalismTheme.primaryWhite,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            _buildQuickStats(),
-            Expanded(
-              child: Obx(
-                () => IndexedStack(
-                  index: controller.selectedIndex.value,
-                  children: [
-                    _buildDashboard(),
-                    ExpenseView(),
-                    TodoView(),
-                    AnalyticsView(),
-                  ],
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              _buildHeader(),
+              _buildQuickStats(),
+              Expanded(
+                child: Obx(
+                  () => IndexedStack(
+                    index: controller.selectedIndex.value,
+                    children: [
+                      _buildDashboard(categoryController),
+                      ExpenseView(),
+                      TodoView(),
+                      AnalyticsView(),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            _buildBottomNav(),
-          ],
-        ),
+              // Add bottom padding to prevent content from being hidden behind floating navbar
+              SizedBox(height: MediaQuery.of(context).size.height * 0.11),
+            ],
+          ),
+          // Floating bottom navigation
+          Positioned(left: 0, right: 0, bottom: 0, child: _buildBottomNav()),
+        ],
       ),
     );
   }
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(Get.context!).padding.top + 20,
+        left: 20,
+        right: 20,
+        bottom: 20,
+      ),
       decoration: const BoxDecoration(
         color: NeoBrutalismTheme.accentYellow,
         border: Border(
@@ -59,26 +73,45 @@ class HomeView extends GetView<HomeController> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'MAGIC LEDGER',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -1,
+                  ),
+                ),
+                const Text(
+                  'Track. Save. Achieve.',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'MAGIC LEDGER',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -1,
+              Container(
+                decoration: NeoBrutalismTheme.neoBox(
+                  color: NeoBrutalismTheme.accentGreen,
+                  offset: 3,
+                ),
+                child: IconButton(
+                  onPressed: () => Get.toNamed('/add-income'),
+                  icon: const Icon(Icons.add_circle_outline, size: 24),
+                  tooltip: 'Add Income',
                 ),
               ),
-              Text(
-                'Track. Save. Achieve.',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              const SizedBox(width: 12),
+              IconButton(
+                onPressed: () => Get.toNamed('/settings'),
+                icon: const Icon(Icons.settings, size: 28),
               ),
             ],
-          ),
-          IconButton(
-            onPressed: () => Get.toNamed('/settings'),
-            icon: const Icon(Icons.settings, size: 28),
           ),
         ],
       ),
@@ -87,98 +120,251 @@ class HomeView extends GetView<HomeController> {
 
   Widget _buildQuickStats() {
     return Container(
-      height: 120,
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      height: 110,
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
-          _buildStatCard(
-            'THIS MONTH',
-            '\$${controller.totalExpensesThisMonth.value.toStringAsFixed(2)}',
-            NeoBrutalismTheme.accentPink,
-            Icons.attach_money,
+          Obx(
+            () => _buildStatCard(
+              'THIS MONTH',
+              _formatCurrency(controller.totalExpensesThisMonth.value),
+              NeoBrutalismTheme.accentPink,
+              Icons.attach_money,
+              onTap:
+                  () => _showStatDialog(
+                    'Monthly Expenses',
+                    '₹${controller.totalExpensesThisMonth.value.toStringAsFixed(2)}',
+                    'Total amount spent this month',
+                    NeoBrutalismTheme.accentPink,
+                    Icons.attach_money,
+                  ),
+            ),
           ),
           const SizedBox(width: 16),
-          _buildStatCard(
-            'PENDING',
-            '${controller.pendingTodos.value}',
-            NeoBrutalismTheme.accentBlue,
-            Icons.checklist,
+          Obx(
+            () => _buildStatCard(
+              'PENDING',
+              '${controller.pendingTodos.value}',
+              NeoBrutalismTheme.accentBlue,
+              Icons.checklist,
+              onTap:
+                  () => _showStatDialog(
+                    'Pending Tasks',
+                    '${controller.pendingTodos.value} tasks',
+                    'Number of incomplete todos',
+                    NeoBrutalismTheme.accentBlue,
+                    Icons.checklist,
+                  ),
+            ),
           ),
           const SizedBox(width: 16),
-          _buildStatCard(
-            'SAVED',
-            '${controller.savingsPercentage.value.toStringAsFixed(0)}%',
-            NeoBrutalismTheme.accentGreen,
-            Icons.savings,
+          Obx(
+            () => _buildStatCard(
+              'SAVED',
+              '${controller.savingsPercentage.value.toStringAsFixed(1)}%',
+              NeoBrutalismTheme.accentGreen,
+              Icons.savings,
+              onTap:
+                  () => _showStatDialog(
+                    'Savings Rate',
+                    '${controller.savingsPercentage.value.toStringAsFixed(1)}%',
+                    'Percentage of income saved this month\nIncome: ₹${controller.totalIncomeThisMonth.value.toStringAsFixed(2)}\nExpenses: ₹${controller.totalExpensesThisMonth.value.toStringAsFixed(2)}',
+                    NeoBrutalismTheme.accentGreen,
+                    Icons.savings,
+                  ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Obx(
+            () => _buildStatCard(
+              'INCOME',
+              _formatCurrency(controller.totalIncomeThisMonth.value),
+              NeoBrutalismTheme.accentPurple,
+              Icons.account_balance_wallet,
+              onTap:
+                  () => _showStatDialog(
+                    'Monthly Income',
+                    '₹${controller.totalIncomeThisMonth.value.toStringAsFixed(2)}',
+                    'Total income received this month',
+                    NeoBrutalismTheme.accentPurple,
+                    Icons.account_balance_wallet,
+                  ),
+            ),
           ),
         ],
       ),
     ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.2, end: 0);
   }
 
+  String _formatCurrency(double amount) {
+    if (amount >= 10000000) {
+      // 1 crore
+      return '₹${(amount / 10000000).toStringAsFixed(1)}Cr';
+    } else if (amount >= 100000) {
+      // 1 lakh
+      return '₹${(amount / 100000).toStringAsFixed(1)}L';
+    } else if (amount >= 1000) {
+      return '₹${(amount / 1000).toStringAsFixed(1)}K';
+    } else {
+      return '₹${amount.toStringAsFixed(0)}';
+    }
+  }
+
   Widget _buildStatCard(
     String label,
     String value,
     Color color,
-    IconData icon,
-  ) {
-    return NeoCard(
-      width: 150,
-      color: color,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Icon(icon, size: 24),
-              Flexible(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
+    IconData icon, {
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: NeoCard(
+        width: 150,
+        color: color,
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, size: 20),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      height: 1.1,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                    textAlign: TextAlign.right,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
-          ),
-          // Replace AnimatedCounter with simple Text for now
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
-              overflow: TextOverflow.ellipsis,
+              ],
             ),
-          ),
-          // Obx(
-          //   () => Expanded(
-          //     child: AnimatedCounter(
-          //       value: value,
-          //       textStyle: const TextStyle(
-          //         fontSize: 24,
-          //         fontWeight: FontWeight.w900,
-          //       ),
-          //     ),
-          //   ),
-          // ),
-        ],
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      value,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                      maxLines: 1,
+                    ),
+                  ),
+                ),
+                if (onTap != null) ...[
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.info_outline,
+                    size: 14,
+                    color: Colors.black54,
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildDashboard() {
+  void _showStatDialog(
+    String title,
+    String value,
+    String description,
+    Color color,
+    IconData icon,
+  ) {
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(
+            color: NeoBrutalismTheme.primaryBlack,
+            width: 3,
+          ),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, size: 32, color: NeoBrutalismTheme.primaryBlack),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        color: NeoBrutalismTheme.primaryBlack,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.w900,
+                  color: NeoBrutalismTheme.primaryBlack,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                description,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: NeoBrutalismTheme.primaryBlack,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              NeoButton(
+                text: 'CLOSE',
+                onPressed: () => Get.back(),
+                color: NeoBrutalismTheme.primaryWhite,
+                textColor: NeoBrutalismTheme.primaryBlack,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDashboard(CategoryController categoryController) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         _buildQuickActions(),
         const SizedBox(height: 24),
-        _buildRecentExpenses(),
+        _buildRecentTransactions(categoryController),
         const SizedBox(height: 24),
         _buildUpcomingTodos(),
       ],
@@ -201,7 +387,7 @@ class HomeView extends GetView<HomeController> {
                 text: 'ADD EXPENSE',
                 onPressed: () => Get.toNamed('/add-expense'),
                 color: NeoBrutalismTheme.accentOrange,
-                icon: Icons.add_circle,
+                icon: Icons.remove_circle,
               ),
             ),
             const SizedBox(width: 16),
@@ -219,7 +405,7 @@ class HomeView extends GetView<HomeController> {
     ).animate().fadeIn(delay: 400.ms);
   }
 
-  Widget _buildRecentExpenses() {
+  Widget _buildRecentTransactions(CategoryController categoryController) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -227,26 +413,103 @@ class HomeView extends GetView<HomeController> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'RECENT EXPENSES',
+              'RECENT TRANSACTIONS',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
             ),
-            TextButton(
-              onPressed: () => controller.changeTab(1),
-              child: const Text('SEE ALL'),
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'expenses') {
+                  controller.changeTab(1);
+                } else if (value == 'income') {
+                  // Navigate to income view or show income list
+                  Get.toNamed('/income');
+                }
+              },
+              itemBuilder:
+                  (context) => [
+                    const PopupMenuItem(
+                      value: 'expenses',
+                      child: Text('View All Expenses'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'income',
+                      child: Text('View All Income'),
+                    ),
+                  ],
+              child: const Text(
+                'SEE ALL',
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ),
         const SizedBox(height: 16),
         Obx(() {
+          // Combine recent expenses and income
           final recentExpenses =
-              controller.expenseController.expenses.take(3).toList();
+              controller.expenseController.expenses.take(2).toList();
+          final recentIncomes =
+              controller.incomeController.incomes.take(2).toList();
 
-          if (recentExpenses.isEmpty) {
+          // Create a combined list with type indicators
+          final List<Map<String, dynamic>> recentTransactions = [];
+
+          // Add expenses
+          for (var expense in recentExpenses) {
+            recentTransactions.add({
+              'type': 'expense',
+              'data': expense,
+              'date': expense.date,
+            });
+          }
+
+          // Add incomes
+          for (var income in recentIncomes) {
+            recentTransactions.add({
+              'type': 'income',
+              'data': income,
+              'date': income.date,
+            });
+          }
+
+          // Sort by date (most recent first)
+          recentTransactions.sort((a, b) => b['date'].compareTo(a['date']));
+
+          // Take only the 4 most recent transactions
+          final displayTransactions = recentTransactions.take(4).toList();
+
+          if (displayTransactions.isEmpty) {
             return NeoCard(
               child: Center(
-                child: Text(
-                  'No expenses yet',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.receipt_long,
+                        size: 48,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No transactions yet',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Add your first expense or income to get started',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -254,11 +517,17 @@ class HomeView extends GetView<HomeController> {
 
           return Column(
             children:
-                recentExpenses
+                displayTransactions
                     .map(
-                      (expense) => Padding(
+                      (transaction) => Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: _buildExpenseItem(expense),
+                        child:
+                            transaction['type'] == 'expense'
+                                ? _buildExpenseItem(
+                                  transaction['data'],
+                                  categoryController,
+                                )
+                                : _buildIncomeItem(transaction['data']),
                       ),
                     )
                     .toList(),
@@ -268,47 +537,193 @@ class HomeView extends GetView<HomeController> {
     ).animate().fadeIn(delay: 600.ms);
   }
 
-  Widget _buildExpenseItem(ExpenseModel expense) {
+  Widget _buildExpenseItem(
+    ExpenseModel expense,
+    CategoryController categoryController,
+  ) {
+    final category = categoryController.categories.firstWhere(
+      (c) => c.id == expense.categoryId,
+      orElse: () => categoryController.categories.first,
+    );
+
     return NeoCard(
       onTap: () => Get.toNamed('/expense-detail', arguments: expense),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: NeoBrutalismTheme.neoBox(
-                  color: NeoBrutalismTheme.accentBlue,
-                ),
-                child: const Icon(Icons.shopping_bag),
-              ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    expense.title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    '${expense.date.day}/${expense.date.month}',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ],
+          Container(
+            width: 48,
+            height: 48,
+            decoration: NeoBrutalismTheme.neoBox(color: category.colorValue),
+            child: Center(
+              child: Text(category.icon, style: const TextStyle(fontSize: 24)),
+            ),
           ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade100,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.red, width: 1),
+                      ),
+                      child: const Text(
+                        'EXPENSE',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        expense.title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        category.name,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[700],
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      ' • ${expense.date.day}/${expense.date.month}',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
           Text(
-            '-\$${expense.amount.toStringAsFixed(2)}',
+            '-₹${expense.amount.toStringAsFixed(2)}',
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w900,
               color: Colors.red,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIncomeItem(IncomeModel income) {
+    return NeoCard(
+      onTap: () => Get.toNamed('/income-detail', arguments: income),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: NeoBrutalismTheme.neoBox(
+              color: NeoBrutalismTheme.accentGreen,
+            ),
+            child: const Center(
+              child: Icon(
+                Icons.account_balance_wallet,
+                size: 24,
+                color: NeoBrutalismTheme.primaryBlack,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.green, width: 1),
+                      ),
+                      child: const Text(
+                        'INCOME',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        income.title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        income.source,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[700],
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      ' • ${income.date.day}/${income.date.month}',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '+₹${income.amount.toStringAsFixed(2)}',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: Colors.green,
             ),
           ),
         ],
@@ -344,9 +759,28 @@ class HomeView extends GetView<HomeController> {
           if (upcomingTodos.isEmpty) {
             return NeoCard(
               child: Center(
-                child: Text(
-                  'No todos yet',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    children: [
+                      Icon(Icons.task_alt, size: 48, color: Colors.grey[400]),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No todos yet',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Add your first todo to stay organized',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -369,8 +803,11 @@ class HomeView extends GetView<HomeController> {
   }
 
   Widget _buildTodoItem(TodoModel todo) {
+    final bgColor = _getPriorityColor(todo.priority);
+    final textColor = _getContrastTextColor(bgColor);
+
     return NeoCard(
-      color: _getPriorityColor(todo.priority),
+      color: bgColor,
       child: Row(
         children: [
           Checkbox(
@@ -378,9 +815,12 @@ class HomeView extends GetView<HomeController> {
             onChanged: (value) {
               todo.isCompleted = value ?? false;
               todo.save();
-              controller.todoController.update();
+              controller.todoController.loadTodos();
+              controller.calculateStats();
             },
             activeColor: NeoBrutalismTheme.primaryBlack,
+            checkColor: NeoBrutalismTheme.primaryWhite,
+            side: BorderSide(color: textColor, width: 2),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -392,16 +832,38 @@ class HomeView extends GetView<HomeController> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
+                    color: textColor,
                     decoration:
                         todo.isCompleted ? TextDecoration.lineThrough : null,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 if (todo.dueDate != null)
                   Text(
                     'Due: ${todo.dueDate!.day}/${todo.dueDate!.month}',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: textColor.withOpacity(0.8),
+                    ),
                   ),
               ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: textColor,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              _getPriorityLabel(todo.priority),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                color: bgColor,
+              ),
             ),
           ),
         ],
@@ -420,43 +882,189 @@ class HomeView extends GetView<HomeController> {
     }
   }
 
+  Color _getContrastTextColor(Color backgroundColor) {
+    if (backgroundColor == NeoBrutalismTheme.primaryWhite) {
+      return NeoBrutalismTheme.primaryBlack;
+    }
+    return NeoBrutalismTheme.primaryWhite;
+  }
+
+  String _getPriorityLabel(int priority) {
+    switch (priority) {
+      case 3:
+        return 'HIGH';
+      case 2:
+        return 'MED';
+      default:
+        return 'LOW';
+    }
+  }
+
   Widget _buildBottomNav() {
+    final screenHeight = MediaQuery.of(Get.context!).size.height;
+    final navbarHeight = screenHeight * 0.09; // 9% of screen height
+
     return Container(
-      decoration: const BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: NeoBrutalismTheme.primaryBlack,
-            width: NeoBrutalismTheme.borderWidth,
+          margin: EdgeInsets.all(
+            screenHeight * 0.02,
+          ), // 2% of screen height for margin
+          height: navbarHeight.clamp(65.0, 85.0), // Min 65, Max 85 pixels
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: NeoBrutalismTheme.primaryBlack,
+                offset: const Offset(4, 4),
+              ),
+            ],
+            borderRadius: BorderRadius.circular(16),
           ),
-        ),
-      ),
-      child: Obx(
-        () => BottomNavigationBar(
-          currentIndex: controller.selectedIndex.value,
-          onTap: controller.changeTab,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: NeoBrutalismTheme.primaryWhite,
-          selectedItemColor: NeoBrutalismTheme.primaryBlack,
-          unselectedItemColor: Colors.grey[600],
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w900),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home, size: 28),
-              label: 'HOME',
+          child: Container(
+            decoration: BoxDecoration(
+              color: NeoBrutalismTheme.primaryWhite,
+              border: Border.all(
+                color: NeoBrutalismTheme.primaryBlack,
+                width: 3,
+              ),
+              borderRadius: BorderRadius.circular(16),
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.attach_money, size: 28),
-              label: 'EXPENSES',
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(
+                13,
+              ), // Account for border width
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: screenHeight * 0.01,
+                  vertical:
+                      screenHeight * 0.008, // Slightly reduced vertical padding
+                ),
+                child: Obx(
+                  () => Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Flexible(
+                        child: _buildNavItem(
+                          Icons.home_rounded,
+                          'HOME',
+                          0,
+                          NeoBrutalismTheme.accentPurple,
+                        ),
+                      ),
+                      Flexible(
+                        child: _buildNavItem(
+                          Icons.receipt_long_rounded,
+                          'EXPENSES',
+                          1,
+                          NeoBrutalismTheme.accentPink,
+                        ),
+                      ),
+                      Flexible(
+                        child: _buildNavItem(
+                          Icons.check_box_rounded,
+                          'TODOS',
+                          2,
+                          NeoBrutalismTheme.accentBlue,
+                        ),
+                      ),
+                      Flexible(
+                        child: _buildNavItem(
+                          Icons.bar_chart_rounded,
+                          'STATS',
+                          3,
+                          NeoBrutalismTheme.accentYellow,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.task_alt, size: 28),
-              label: 'TODOS',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.analytics, size: 28),
-              label: 'ANALYTICS',
-            ),
-          ],
+          ),
+        )
+        .animate()
+        .fadeIn(duration: 300.ms)
+        .slideY(begin: 1, end: 0, curve: Curves.easeOutCubic);
+  }
+
+  Widget _buildNavItem(
+    IconData icon,
+    String label,
+    int index,
+    Color activeColor,
+  ) {
+    final isSelected = controller.selectedIndex.value == index;
+    final screenHeight = MediaQuery.of(Get.context!).size.height;
+    final iconSize = screenHeight * 0.024; // Slightly reduced from 0.025
+    final selectedIconSize = screenHeight * 0.028; // Slightly reduced from 0.03
+
+    return GestureDetector(
+      onTap: () => controller.changeTab(index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width:
+                    isSelected
+                        ? selectedIconSize.clamp(32.0, 42.0)
+                        : iconSize.clamp(26.0, 36.0),
+                height:
+                    isSelected
+                        ? selectedIconSize.clamp(32.0, 42.0)
+                        : iconSize.clamp(26.0, 36.0),
+                decoration: BoxDecoration(
+                  color: isSelected ? activeColor : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color:
+                        isSelected
+                            ? NeoBrutalismTheme.primaryBlack
+                            : Colors.transparent,
+                    width: isSelected ? 2 : 0,
+                  ),
+                  boxShadow:
+                      isSelected
+                          ? [
+                            BoxShadow(
+                              color: NeoBrutalismTheme.primaryBlack,
+                              offset: const Offset(2, 2),
+                            ),
+                          ]
+                          : [],
+                ),
+                child: Icon(
+                  icon,
+                  size:
+                      isSelected
+                          ? (selectedIconSize * 0.6).clamp(16.0, 22.0)
+                          : (iconSize * 0.6).clamp(14.0, 20.0),
+                  color:
+                      isSelected
+                          ? NeoBrutalismTheme.primaryBlack
+                          : Colors.grey[600],
+                ),
+              ),
+              SizedBox(height: screenHeight * 0.004), // Reduced spacing
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: (screenHeight * 0.011).clamp(
+                    8.0,
+                    11.0,
+                  ), // Reduced font size
+                  fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                  color:
+                      isSelected
+                          ? NeoBrutalismTheme.primaryBlack
+                          : Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

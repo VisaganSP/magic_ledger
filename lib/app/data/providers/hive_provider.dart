@@ -3,6 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../models/budget_model.dart';
 import '../models/category_model.dart';
 import '../models/expense_model.dart';
+import '../models/income_model.dart';
 import '../models/receipt_model.dart';
 import '../models/todo_model.dart';
 
@@ -13,6 +14,7 @@ class HiveProvider {
   static const String budgetBoxName = 'budgets';
   static const String receiptBoxName = 'receipts';
   static const String settingsBoxName = 'settings';
+  static const String incomeBoxName = 'income';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -33,6 +35,9 @@ class HiveProvider {
     if (!Hive.isAdapterRegistered(4)) {
       Hive.registerAdapter(ReceiptModelAdapter());
     }
+    if (!Hive.isAdapterRegistered(5)) {
+      Hive.registerAdapter(IncomeModelAdapter());
+    }
 
     // Open Boxes
     await openBoxes();
@@ -44,6 +49,7 @@ class HiveProvider {
     await Hive.openBox<TodoModel>(todoBoxName);
     await Hive.openBox<BudgetModel>(budgetBoxName);
     await Hive.openBox<ReceiptModel>(receiptBoxName);
+    await Hive.openBox<IncomeModel>(incomeBoxName);
     await Hive.openBox(settingsBoxName);
   }
 
@@ -52,7 +58,13 @@ class HiveProvider {
   }
 
   static Future<void> clearAllData() async {
-    final boxes = [expenseBoxName, todoBoxName, budgetBoxName, receiptBoxName];
+    final boxes = [
+      expenseBoxName,
+      todoBoxName,
+      budgetBoxName,
+      receiptBoxName,
+      incomeBoxName, // Added income box to clear data
+    ];
 
     for (final boxName in boxes) {
       final box = await Hive.openBox(boxName);
@@ -78,6 +90,10 @@ class HiveProvider {
 
   static Box<ReceiptModel> getReceiptBox() {
     return Hive.box<ReceiptModel>(receiptBoxName);
+  }
+
+  static Box<IncomeModel> getIncomeBox() {
+    return Hive.box<IncomeModel>(incomeBoxName);
   }
 
   static Box getSettingsBox() {

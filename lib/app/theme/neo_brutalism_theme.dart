@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 class NeoBrutalismTheme {
   static const Color primaryBlack = Color(0xFF000000);
   static const Color primaryWhite = Color(0xFFFFFFFF);
+  static const Color darkBackground = Color(0xFF1A1A1A);
+  static const Color darkSurface = Color(0xFF2D2D2D);
+  static const Color darkText = Color(0xFFFFFFFF);
+
   static const Color accentYellow = Color(0xFFFFD93D);
   static const Color accentPink = Color(0xFFFF6BC6);
   static const Color accentBlue = Color(0xFF6BCFFF);
@@ -14,31 +18,51 @@ class NeoBrutalismTheme {
   static const double shadowOffset = 5.0;
 
   static BoxDecoration neoBox({
-    Color color = primaryWhite,
-    Color borderColor = primaryBlack,
+    Color? color,
+    Color? borderColor,
     double offset = shadowOffset,
+    bool isDark = false,
   }) {
+    final defaultColor = isDark ? darkSurface : primaryWhite;
+    final defaultBorderColor = isDark ? primaryWhite : primaryBlack;
+
     return BoxDecoration(
-      color: color,
-      border: Border.all(color: borderColor, width: borderWidth),
+      color: color ?? defaultColor,
+      border: Border.all(
+        color: borderColor ?? defaultBorderColor,
+        width: borderWidth,
+      ),
       boxShadow: [
-        BoxShadow(color: borderColor, offset: Offset(offset, offset)),
+        BoxShadow(
+          color: borderColor ?? defaultBorderColor,
+          offset: Offset(offset, offset),
+        ),
       ],
     );
   }
 
   static BoxDecoration neoBoxRounded({
-    Color color = primaryWhite,
-    Color borderColor = primaryBlack,
+    Color? color,
+    Color? borderColor,
     double offset = shadowOffset,
     double radius = 12,
+    bool isDark = false,
   }) {
+    final defaultColor = isDark ? darkSurface : primaryWhite;
+    final defaultBorderColor = isDark ? primaryWhite : primaryBlack;
+
     return BoxDecoration(
-      color: color,
+      color: color ?? defaultColor,
       borderRadius: BorderRadius.circular(radius),
-      border: Border.all(color: borderColor, width: borderWidth),
+      border: Border.all(
+        color: borderColor ?? defaultBorderColor,
+        width: borderWidth,
+      ),
       boxShadow: [
-        BoxShadow(color: borderColor, offset: Offset(offset, offset)),
+        BoxShadow(
+          color: borderColor ?? defaultBorderColor,
+          offset: Offset(offset, offset),
+        ),
       ],
     );
   }
