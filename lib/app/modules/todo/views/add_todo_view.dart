@@ -10,6 +10,8 @@ import '../../../widgets/neo_input.dart';
 import '../controllers/todo_controller.dart';
 
 class AddTodoView extends StatefulWidget {
+  const AddTodoView({super.key});
+
   @override
   _AddTodoViewState createState() => _AddTodoViewState();
 }
@@ -25,7 +27,7 @@ class _AddTodoViewState extends State<AddTodoView> {
   int _priority = 1;
   bool _hasReminder = false;
   TimeOfDay _reminderTime = TimeOfDay.now();
-  List<String> _tags = [];
+  final List<String> _tags = [];
 
   @override
   void dispose() {

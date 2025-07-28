@@ -13,7 +13,7 @@ class NeoCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   const NeoCard({
-    Key? key,
+    super.key,
     required this.child,
     this.color = NeoBrutalismTheme.primaryWhite,
     this.borderColor = NeoBrutalismTheme.primaryBlack,
@@ -22,7 +22,7 @@ class NeoCard extends StatelessWidget {
     this.padding,
     this.margin,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

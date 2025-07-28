@@ -12,6 +12,8 @@ import '../controllers/expense_controller.dart';
 class ExpenseView extends GetView<ExpenseController> {
   final CategoryController categoryController = Get.find();
 
+  const ExpenseView({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -19,7 +21,6 @@ class ExpenseView extends GetView<ExpenseController> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => Get.toNamed('/add-expense'),
         backgroundColor: NeoBrutalismTheme.accentOrange,
-        child: const Icon(Icons.add, size: 32),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: const BorderSide(
@@ -27,6 +28,7 @@ class ExpenseView extends GetView<ExpenseController> {
             width: 3,
           ),
         ),
+        child: const Icon(Icons.add, size: 32),
       ).animate().scale(delay: 500.ms),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

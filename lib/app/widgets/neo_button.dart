@@ -13,7 +13,7 @@ class NeoButton extends StatefulWidget {
   final bool isLoading;
 
   const NeoButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     this.color = NeoBrutalismTheme.accentPink,
@@ -22,7 +22,7 @@ class NeoButton extends StatefulWidget {
     this.height = 56,
     this.icon,
     this.isLoading = false,
-  }) : super(key: key);
+  });
 
   @override
   _NeoButtonState createState() => _NeoButtonState();

@@ -1,7 +1,5 @@
 import 'package:get/get.dart';
 
-import '../../../data/models/expense_model.dart';
-import '../../../data/models/todo_model.dart';
 import '../../expense/controllers/expense_controller.dart';
 import '../../todo/controllers/todo_controller.dart';
 

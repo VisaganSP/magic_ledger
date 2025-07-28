@@ -10,6 +10,8 @@ import '../../../widgets/neo_card.dart';
 import '../controllers/analytics_controller.dart';
 
 class AnalyticsView extends GetView<AnalyticsController> {
+  const AnalyticsView({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -181,7 +183,7 @@ class AnalyticsView extends GetView<AnalyticsController> {
           ),
           const SizedBox(height: 20),
           Obx(
-            () => Container(
+            () => SizedBox(
               height: 200,
               child: PieChart(
                 PieChartData(
@@ -273,7 +275,7 @@ class AnalyticsView extends GetView<AnalyticsController> {
           ),
           const SizedBox(height: 20),
           Obx(
-            () => Container(
+            () => SizedBox(
               height: 200,
               child: LineChart(
                 LineChartData(

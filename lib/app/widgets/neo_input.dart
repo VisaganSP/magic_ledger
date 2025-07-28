@@ -13,7 +13,7 @@ class NeoInput extends StatelessWidget {
   final IconData? suffixIcon;
 
   const NeoInput({
-    Key? key,
+    super.key,
     required this.controller,
     required this.label,
     this.hint,
@@ -22,7 +22,7 @@ class NeoInput extends StatelessWidget {
     this.maxLines = 1,
     this.prefixText,
     this.suffixIcon,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

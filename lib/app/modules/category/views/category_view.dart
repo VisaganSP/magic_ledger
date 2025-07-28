@@ -9,6 +9,8 @@ import '../../../widgets/neo_card.dart';
 import '../controllers/category_controller.dart';
 
 class CategoryView extends GetView<CategoryController> {
+  const CategoryView({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,7 +22,6 @@ class CategoryView extends GetView<CategoryController> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => Get.toNamed('/add-category'),
         backgroundColor: NeoBrutalismTheme.accentGreen,
-        child: const Icon(Icons.add, size: 32),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: const BorderSide(
@@ -28,6 +29,7 @@ class CategoryView extends GetView<CategoryController> {
             width: 3,
           ),
         ),
+        child: const Icon(Icons.add, size: 32),
       ).animate().scale(delay: 500.ms),
       body: Obx(
         () => GridView.builder(

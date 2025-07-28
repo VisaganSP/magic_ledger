@@ -8,6 +8,8 @@ import '../../../widgets/neo_input.dart';
 import '../controllers/category_controller.dart';
 
 class AddCategoryView extends StatefulWidget {
+  const AddCategoryView({super.key});
+
   @override
   _AddCategoryViewState createState() => _AddCategoryViewState();
 }
@@ -206,7 +208,7 @@ class _AddCategoryViewState extends State<AddCategoryView> {
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
         ),
         const SizedBox(height: 8),
-        Container(
+        SizedBox(
           height: 60,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,

@@ -9,6 +9,8 @@ import '../../../widgets/neo_card.dart';
 import '../controllers/todo_controller.dart';
 
 class TodoView extends GetView<TodoController> {
+  const TodoView({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

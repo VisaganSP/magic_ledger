@@ -13,6 +13,8 @@ import '../../category/controllers/category_controller.dart';
 import '../controllers/expense_controller.dart';
 
 class AddExpenseView extends StatefulWidget {
+  const AddExpenseView({super.key});
+
   @override
   _AddExpenseViewState createState() => _AddExpenseViewState();
 }
@@ -33,7 +35,7 @@ class _AddExpenseViewState extends State<AddExpenseView>
   File? _receiptImage;
   bool _isRecurring = false;
   String _recurringType = 'monthly';
-  List<String> _tags = [];
+  final List<String> _tags = [];
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -231,7 +233,7 @@ class _AddExpenseViewState extends State<AddExpenseView>
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
         ),
         const SizedBox(height: 8),
-        Container(
+        SizedBox(
           height: 80,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,

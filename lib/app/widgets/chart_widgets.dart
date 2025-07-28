@@ -8,10 +8,10 @@ class NeoPieChart extends StatelessWidget {
   final double centerSpaceRadius;
 
   const NeoPieChart({
-    Key? key,
+    super.key,
     required this.sections,
     this.centerSpaceRadius = 40,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -40,12 +40,12 @@ class NeoLineChart extends StatelessWidget {
   final String? bottomTitle;
 
   const NeoLineChart({
-    Key? key,
+    super.key,
     required this.spots,
     this.lineColor = NeoBrutalismTheme.accentPink,
     this.leftTitle,
     this.bottomTitle,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -137,8 +137,7 @@ class NeoBarChart extends StatelessWidget {
   final List<BarChartGroupData> barGroups;
   final double maxY;
 
-  const NeoBarChart({Key? key, required this.barGroups, required this.maxY})
-    : super(key: key);
+  const NeoBarChart({super.key, required this.barGroups, required this.maxY});
 
   @override
   Widget build(BuildContext context) {
