@@ -12,7 +12,7 @@ import '../controllers/expense_controller.dart';
 class ExpenseView extends GetView<ExpenseController> {
   final CategoryController categoryController = Get.find();
 
-  const ExpenseView({super.key});
+  ExpenseView({super.key});
 
   @override
   Widget build(BuildContext context) {

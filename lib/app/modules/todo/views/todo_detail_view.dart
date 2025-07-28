@@ -11,7 +11,7 @@ class TodoDetailView extends StatelessWidget {
   final TodoModel todo = Get.arguments;
   final TodoController todoController = Get.find();
 
-  const TodoDetailView({super.key});
+  TodoDetailView({super.key});
 
   @override
   Widget build(BuildContext context) {

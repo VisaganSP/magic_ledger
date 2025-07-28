@@ -14,7 +14,7 @@ class ExpenseDetailView extends StatelessWidget {
   final ExpenseModel expense = Get.arguments;
   final CategoryController categoryController = Get.find();
 
-  const ExpenseDetailView({super.key});
+  ExpenseDetailView({super.key});
 
   @override
   Widget build(BuildContext context) {
