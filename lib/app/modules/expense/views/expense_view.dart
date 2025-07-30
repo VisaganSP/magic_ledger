@@ -23,8 +23,13 @@ class ExpenseView extends GetView<ExpenseController> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: NeoBrutalismTheme.primaryWhite,
+      backgroundColor:
+          isDark
+              ? NeoBrutalismTheme.darkBackground
+              : NeoBrutalismTheme.primaryWhite,
       floatingActionButton: Obx(
         () => FloatingActionButton(
           heroTag: "home_fab_${selectedType.value}", // Dynamic unique heroTag
@@ -35,14 +40,11 @@ class ExpenseView extends GetView<ExpenseController> {
                       : Get.toNamed('/add-income'),
           backgroundColor:
               selectedType.value == 'Expenses'
-                  ? NeoBrutalismTheme.accentOrange
-                  : NeoBrutalismTheme.accentGreen,
+                  ? _getThemedColor(NeoBrutalismTheme.accentOrange, isDark)
+                  : _getThemedColor(NeoBrutalismTheme.accentGreen, isDark),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(
-              color: NeoBrutalismTheme.primaryBlack,
-              width: 3,
-            ),
+            side: BorderSide(color: NeoBrutalismTheme.primaryBlack, width: 3),
           ),
           child: Icon(
             selectedType.value == 'Expenses' ? Icons.remove : Icons.add,
@@ -55,22 +57,22 @@ class ExpenseView extends GetView<ExpenseController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(),
-            _buildTypeToggle(),
-            _buildFilterSection(),
+            _buildHeader(isDark),
+            _buildTypeToggle(isDark),
+            _buildFilterSection(isDark),
             Obx(() {
               if (selectedType.value == 'Expenses') {
                 final filteredExpenses = _getFilteredExpenses();
                 if (filteredExpenses.isEmpty) {
-                  return _buildEmptyState();
+                  return _buildEmptyState(isDark);
                 }
-                return _buildExpenseList(filteredExpenses);
+                return _buildExpenseList(filteredExpenses, isDark);
               } else {
                 final filteredIncomes = _getFilteredIncomes();
                 if (filteredIncomes.isEmpty) {
-                  return _buildEmptyIncomeState();
+                  return _buildEmptyIncomeState(isDark);
                 }
-                return _buildIncomeList(filteredIncomes);
+                return _buildIncomeList(filteredIncomes, isDark);
               }
             }),
             const SizedBox(height: 65), // Extra space for FAB
@@ -80,7 +82,28 @@ class ExpenseView extends GetView<ExpenseController> {
     );
   }
 
-  Widget _buildHeader() {
+  // Helper method to get muted colors for dark theme
+  Color _getThemedColor(Color color, bool isDark) {
+    if (!isDark) return color;
+
+    // Return slightly muted versions of colors for dark theme
+    if (color == NeoBrutalismTheme.accentYellow) {
+      return Color(0xFFE6B800); // Slightly darker yellow
+    } else if (color == NeoBrutalismTheme.accentPink) {
+      return Color(0xFFE667A0); // Slightly darker pink
+    } else if (color == NeoBrutalismTheme.accentBlue) {
+      return Color(0xFF4D94FF); // Slightly darker blue
+    } else if (color == NeoBrutalismTheme.accentGreen) {
+      return Color(0xFF00CC66); // Slightly darker green
+    } else if (color == NeoBrutalismTheme.accentOrange) {
+      return Color(0xFFFF8533); // Slightly darker orange
+    } else if (color == NeoBrutalismTheme.accentPurple) {
+      return Color(0xFF9966FF); // Slightly darker purple
+    }
+    return color;
+  }
+
+  Widget _buildHeader(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -89,7 +112,14 @@ class ExpenseView extends GetView<ExpenseController> {
           Obx(
             () => Text(
               selectedType.value.toUpperCase(),
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                color:
+                    isDark
+                        ? NeoBrutalismTheme.darkText
+                        : NeoBrutalismTheme.primaryBlack,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -102,9 +132,13 @@ class ExpenseView extends GetView<ExpenseController> {
               );
               return Text(
                 'Total: ₹${total.toStringAsFixed(2)}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
+                  color:
+                      isDark
+                          ? Colors.grey[400]
+                          : NeoBrutalismTheme.primaryBlack,
                 ),
               );
             } else {
@@ -115,9 +149,13 @@ class ExpenseView extends GetView<ExpenseController> {
               );
               return Text(
                 'Total: ₹${total.toStringAsFixed(2)}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
+                  color:
+                      isDark
+                          ? Colors.grey[400]
+                          : NeoBrutalismTheme.primaryBlack,
                 ),
               );
             }
@@ -127,7 +165,7 @@ class ExpenseView extends GetView<ExpenseController> {
     ).animate().fadeIn().slideX(begin: -0.2, end: 0);
   }
 
-  Widget _buildTypeToggle() {
+  Widget _buildTypeToggle(bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
@@ -142,9 +180,15 @@ class ExpenseView extends GetView<ExpenseController> {
                   decoration: NeoBrutalismTheme.neoBox(
                     color:
                         selectedType.value == 'Expenses'
-                            ? NeoBrutalismTheme.accentOrange
-                            : NeoBrutalismTheme.primaryWhite,
+                            ? _getThemedColor(
+                              NeoBrutalismTheme.accentOrange,
+                              isDark,
+                            )
+                            : (isDark
+                                ? NeoBrutalismTheme.darkSurface
+                                : NeoBrutalismTheme.primaryWhite),
                     offset: selectedType.value == 'Expenses' ? 2 : 5,
+                    borderColor: NeoBrutalismTheme.primaryBlack,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -154,7 +198,9 @@ class ExpenseView extends GetView<ExpenseController> {
                         color:
                             selectedType.value == 'Expenses'
                                 ? NeoBrutalismTheme.primaryBlack
-                                : Colors.grey[600],
+                                : (isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600]),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -165,7 +211,9 @@ class ExpenseView extends GetView<ExpenseController> {
                           color:
                               selectedType.value == 'Expenses'
                                   ? NeoBrutalismTheme.primaryBlack
-                                  : Colors.grey[600],
+                                  : (isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600]),
                         ),
                       ),
                     ],
@@ -185,9 +233,15 @@ class ExpenseView extends GetView<ExpenseController> {
                   decoration: NeoBrutalismTheme.neoBox(
                     color:
                         selectedType.value == 'Income'
-                            ? NeoBrutalismTheme.accentGreen
-                            : NeoBrutalismTheme.primaryWhite,
+                            ? _getThemedColor(
+                              NeoBrutalismTheme.accentGreen,
+                              isDark,
+                            )
+                            : (isDark
+                                ? NeoBrutalismTheme.darkSurface
+                                : NeoBrutalismTheme.primaryWhite),
                     offset: selectedType.value == 'Income' ? 2 : 5,
+                    borderColor: NeoBrutalismTheme.primaryBlack,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -197,7 +251,9 @@ class ExpenseView extends GetView<ExpenseController> {
                         color:
                             selectedType.value == 'Income'
                                 ? NeoBrutalismTheme.primaryBlack
-                                : Colors.grey[600],
+                                : (isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600]),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -208,7 +264,9 @@ class ExpenseView extends GetView<ExpenseController> {
                           color:
                               selectedType.value == 'Income'
                                   ? NeoBrutalismTheme.primaryBlack
-                                  : Colors.grey[600],
+                                  : (isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600]),
                         ),
                       ),
                     ],
@@ -222,28 +280,28 @@ class ExpenseView extends GetView<ExpenseController> {
     ).animate().fadeIn(delay: 100.ms);
   }
 
-  Widget _buildFilterSection() {
+  Widget _buildFilterSection(bool isDark) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'FILTER BY',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w900,
-              color: Colors.grey,
+              color: isDark ? Colors.grey[600] : Colors.grey,
             ),
           ),
-          const SizedBox(height: 8),
-          _buildFilterGrid(),
+          const SizedBox(height: 0),
+          _buildFilterGrid(isDark),
         ],
       ),
     ).animate().fadeIn(delay: 200.ms);
   }
 
-  Widget _buildFilterGrid() {
+  Widget _buildFilterGrid(bool isDark) {
     final filters = [
       {'label': 'All', 'icon': Icons.all_inclusive},
       {'label': 'Today', 'icon': Icons.today},
@@ -268,13 +326,19 @@ class ExpenseView extends GetView<ExpenseController> {
             filter['label'] as String,
             filter['icon'] as IconData,
             selectedFilter.value == filter['label'],
+            isDark,
           ),
         );
       },
     );
   }
 
-  Widget _buildFilterChip(String label, IconData icon, bool isSelected) {
+  Widget _buildFilterChip(
+    String label,
+    IconData icon,
+    bool isSelected,
+    bool isDark,
+  ) {
     return GestureDetector(
       onTap: () => selectedFilter.value = label,
       child: AnimatedContainer(
@@ -283,9 +347,12 @@ class ExpenseView extends GetView<ExpenseController> {
         decoration: NeoBrutalismTheme.neoBox(
           color:
               isSelected
-                  ? NeoBrutalismTheme.accentYellow
-                  : NeoBrutalismTheme.primaryWhite,
+                  ? _getThemedColor(NeoBrutalismTheme.accentYellow, isDark)
+                  : (isDark
+                      ? NeoBrutalismTheme.darkSurface
+                      : NeoBrutalismTheme.primaryWhite),
           offset: isSelected ? 2 : 5,
+          borderColor: NeoBrutalismTheme.primaryBlack,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -296,7 +363,7 @@ class ExpenseView extends GetView<ExpenseController> {
               color:
                   isSelected
                       ? NeoBrutalismTheme.primaryBlack
-                      : Colors.grey[700],
+                      : (isDark ? Colors.grey[400] : Colors.grey[700]),
             ),
             const SizedBox(width: 8),
             Flexible(
@@ -308,7 +375,7 @@ class ExpenseView extends GetView<ExpenseController> {
                   color:
                       isSelected
                           ? NeoBrutalismTheme.primaryBlack
-                          : Colors.grey[700],
+                          : (isDark ? Colors.grey[400] : Colors.grey[700]),
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -394,7 +461,7 @@ class ExpenseView extends GetView<ExpenseController> {
     }
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(bool isDark) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -403,9 +470,14 @@ class ExpenseView extends GetView<ExpenseController> {
             width: 120,
             height: 120,
             decoration: NeoBrutalismTheme.neoBox(
-              color: NeoBrutalismTheme.accentPink,
+              color: _getThemedColor(NeoBrutalismTheme.accentPink, isDark),
+              borderColor: NeoBrutalismTheme.primaryBlack,
             ),
-            child: const Icon(Icons.receipt_long, size: 60),
+            child: const Icon(
+              Icons.receipt_long,
+              size: 60,
+              color: NeoBrutalismTheme.primaryBlack,
+            ),
           ).animate().scale(duration: 500.ms),
           const SizedBox(height: 24),
           Obx(() {
@@ -414,9 +486,13 @@ class ExpenseView extends GetView<ExpenseController> {
               children: [
                 Text(
                   isFiltered ? 'NO EXPENSES FOUND' : 'NO EXPENSES YET',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
+                    color:
+                        isDark
+                            ? NeoBrutalismTheme.darkText
+                            : NeoBrutalismTheme.primaryBlack,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -424,7 +500,10 @@ class ExpenseView extends GetView<ExpenseController> {
                   isFiltered
                       ? 'No expenses for ${selectedFilter.value.toLowerCase()}'
                       : 'Start tracking your expenses',
-                  style: const TextStyle(fontSize: 16, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDark ? Colors.grey[400] : Colors.grey,
+                  ),
                 ),
               ],
             );
@@ -433,7 +512,7 @@ class ExpenseView extends GetView<ExpenseController> {
           NeoButton(
             text: 'ADD EXPENSE',
             onPressed: () => Get.toNamed('/add-expense'),
-            color: NeoBrutalismTheme.accentOrange,
+            color: _getThemedColor(NeoBrutalismTheme.accentOrange, isDark),
             icon: Icons.add,
           ),
         ],
@@ -441,7 +520,7 @@ class ExpenseView extends GetView<ExpenseController> {
     );
   }
 
-  Widget _buildEmptyIncomeState() {
+  Widget _buildEmptyIncomeState(bool isDark) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -450,9 +529,14 @@ class ExpenseView extends GetView<ExpenseController> {
             width: 120,
             height: 120,
             decoration: NeoBrutalismTheme.neoBox(
-              color: NeoBrutalismTheme.accentGreen,
+              color: _getThemedColor(NeoBrutalismTheme.accentGreen, isDark),
+              borderColor: NeoBrutalismTheme.primaryBlack,
             ),
-            child: const Icon(Icons.account_balance_wallet, size: 60),
+            child: const Icon(
+              Icons.account_balance_wallet,
+              size: 60,
+              color: NeoBrutalismTheme.primaryBlack,
+            ),
           ).animate().scale(duration: 500.ms),
           const SizedBox(height: 24),
           Obx(() {
@@ -461,9 +545,13 @@ class ExpenseView extends GetView<ExpenseController> {
               children: [
                 Text(
                   isFiltered ? 'NO INCOME FOUND' : 'NO INCOME YET',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
+                    color:
+                        isDark
+                            ? NeoBrutalismTheme.darkText
+                            : NeoBrutalismTheme.primaryBlack,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -471,7 +559,10 @@ class ExpenseView extends GetView<ExpenseController> {
                   isFiltered
                       ? 'No income for ${selectedFilter.value.toLowerCase()}'
                       : 'Start tracking your income',
-                  style: const TextStyle(fontSize: 16, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDark ? Colors.grey[400] : Colors.grey,
+                  ),
                 ),
               ],
             );
@@ -480,7 +571,7 @@ class ExpenseView extends GetView<ExpenseController> {
           NeoButton(
             text: 'ADD INCOME',
             onPressed: () => Get.toNamed('/add-income'),
-            color: NeoBrutalismTheme.accentGreen,
+            color: _getThemedColor(NeoBrutalismTheme.accentGreen, isDark),
             icon: Icons.add,
           ),
         ],
@@ -488,7 +579,7 @@ class ExpenseView extends GetView<ExpenseController> {
     );
   }
 
-  Widget _buildExpenseList(List<ExpenseModel> expenses) {
+  Widget _buildExpenseList(List<ExpenseModel> expenses, bool isDark) {
     return Column(
       children:
           expenses.asMap().entries.map((entry) {
@@ -496,13 +587,13 @@ class ExpenseView extends GetView<ExpenseController> {
             final expense = entry.value;
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: _buildExpenseCard(expense, index),
+              child: _buildExpenseCard(expense, index, isDark),
             );
           }).toList(),
     );
   }
 
-  Widget _buildIncomeList(List<IncomeModel> incomes) {
+  Widget _buildIncomeList(List<IncomeModel> incomes, bool isDark) {
     return Column(
       children:
           incomes.asMap().entries.map((entry) {
@@ -510,13 +601,13 @@ class ExpenseView extends GetView<ExpenseController> {
             final income = entry.value;
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: _buildIncomeCard(income, index),
+              child: _buildIncomeCard(income, index, isDark),
             );
           }).toList(),
     );
   }
 
-  Widget _buildExpenseCard(ExpenseModel expense, int index) {
+  Widget _buildExpenseCard(ExpenseModel expense, int index, bool isDark) {
     CategoryModel? category;
     try {
       category = categoryController.categories.firstWhere(
@@ -538,7 +629,10 @@ class ExpenseView extends GetView<ExpenseController> {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        decoration: NeoBrutalismTheme.neoBox(color: Colors.red),
+        decoration: NeoBrutalismTheme.neoBox(
+          color: Colors.red,
+          borderColor: NeoBrutalismTheme.primaryBlack,
+        ),
         child: const Icon(
           Icons.delete,
           color: NeoBrutalismTheme.primaryWhite,
@@ -548,14 +642,40 @@ class ExpenseView extends GetView<ExpenseController> {
       confirmDismiss: (direction) async {
         return await Get.dialog<bool>(
               AlertDialog(
-                title: const Text('Delete Expense'),
+                backgroundColor:
+                    isDark
+                        ? NeoBrutalismTheme.darkSurface
+                        : NeoBrutalismTheme.primaryWhite,
+                title: Text(
+                  'Delete Expense',
+                  style: TextStyle(
+                    color:
+                        isDark
+                            ? NeoBrutalismTheme.darkText
+                            : NeoBrutalismTheme.primaryBlack,
+                  ),
+                ),
                 content: Text(
                   'Are you sure you want to delete "${expense.title}"?',
+                  style: TextStyle(
+                    color:
+                        isDark
+                            ? NeoBrutalismTheme.darkText
+                            : NeoBrutalismTheme.primaryBlack,
+                  ),
                 ),
                 actions: [
                   TextButton(
                     onPressed: () => Get.back(result: false),
-                    child: const Text('Cancel'),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color:
+                            isDark
+                                ? NeoBrutalismTheme.darkText
+                                : NeoBrutalismTheme.primaryBlack,
+                      ),
+                    ),
                   ),
                   TextButton(
                     onPressed: () => Get.back(result: true),
@@ -574,7 +694,10 @@ class ExpenseView extends GetView<ExpenseController> {
         Get.snackbar(
           'Deleted',
           '${expense.title} removed',
-          backgroundColor: NeoBrutalismTheme.accentPink,
+          backgroundColor: _getThemedColor(
+            NeoBrutalismTheme.accentPink,
+            isDark,
+          ),
           colorText: NeoBrutalismTheme.primaryBlack,
           borderWidth: 3,
           borderColor: NeoBrutalismTheme.primaryBlack,
@@ -583,12 +706,20 @@ class ExpenseView extends GetView<ExpenseController> {
       },
       child: NeoCard(
         onTap: () => Get.toNamed('/expense-detail', arguments: expense),
+        color:
+            isDark
+                ? NeoBrutalismTheme.darkSurface
+                : NeoBrutalismTheme.primaryWhite,
+        borderColor: NeoBrutalismTheme.primaryBlack,
         child: Row(
           children: [
             Container(
               width: 60,
               height: 60,
-              decoration: NeoBrutalismTheme.neoBox(color: categoryColor),
+              decoration: NeoBrutalismTheme.neoBox(
+                color: _getThemedColor(categoryColor, isDark),
+                borderColor: NeoBrutalismTheme.primaryBlack,
+              ),
               child: Center(
                 child: Text(categoryIcon, style: const TextStyle(fontSize: 28)),
               ),
@@ -600,9 +731,13 @@ class ExpenseView extends GetView<ExpenseController> {
                 children: [
                   Text(
                     expense.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
+                      color:
+                          isDark
+                              ? NeoBrutalismTheme.darkText
+                              : NeoBrutalismTheme.primaryBlack,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -615,7 +750,7 @@ class ExpenseView extends GetView<ExpenseController> {
                           categoryName,
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -623,7 +758,10 @@ class ExpenseView extends GetView<ExpenseController> {
                       const SizedBox(width: 8),
                       Text(
                         '• ${expense.date.day}/${expense.date.month}/${expense.date.year}',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        ),
                       ),
                     ],
                   ),
@@ -641,7 +779,10 @@ class ExpenseView extends GetView<ExpenseController> {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: NeoBrutalismTheme.accentYellow,
+                                    color: _getThemedColor(
+                                      NeoBrutalismTheme.accentYellow,
+                                      isDark,
+                                    ),
                                     border: Border.all(
                                       color: NeoBrutalismTheme.primaryBlack,
                                       width: 2,
@@ -653,6 +794,7 @@ class ExpenseView extends GetView<ExpenseController> {
                                     style: const TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
+                                      color: NeoBrutalismTheme.primaryBlack,
                                     ),
                                   ),
                                 ),
@@ -683,7 +825,10 @@ class ExpenseView extends GetView<ExpenseController> {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: NeoBrutalismTheme.accentPurple,
+                      color: _getThemedColor(
+                        NeoBrutalismTheme.accentPurple,
+                        isDark,
+                      ),
                       border: Border.all(
                         color: NeoBrutalismTheme.primaryBlack,
                         width: 2,
@@ -708,14 +853,17 @@ class ExpenseView extends GetView<ExpenseController> {
     ).animate().fadeIn(delay: (100 * index).ms).slideX(begin: 0.2, end: 0);
   }
 
-  Widget _buildIncomeCard(IncomeModel income, int index) {
+  Widget _buildIncomeCard(IncomeModel income, int index, bool isDark) {
     return Dismissible(
       key: Key(income.id),
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        decoration: NeoBrutalismTheme.neoBox(color: Colors.red),
+        decoration: NeoBrutalismTheme.neoBox(
+          color: Colors.red,
+          borderColor: NeoBrutalismTheme.primaryBlack,
+        ),
         child: const Icon(
           Icons.delete,
           color: NeoBrutalismTheme.primaryWhite,
@@ -725,14 +873,40 @@ class ExpenseView extends GetView<ExpenseController> {
       confirmDismiss: (direction) async {
         return await Get.dialog<bool>(
               AlertDialog(
-                title: const Text('Delete Income'),
+                backgroundColor:
+                    isDark
+                        ? NeoBrutalismTheme.darkSurface
+                        : NeoBrutalismTheme.primaryWhite,
+                title: Text(
+                  'Delete Income',
+                  style: TextStyle(
+                    color:
+                        isDark
+                            ? NeoBrutalismTheme.darkText
+                            : NeoBrutalismTheme.primaryBlack,
+                  ),
+                ),
                 content: Text(
                   'Are you sure you want to delete "${income.title}"?',
+                  style: TextStyle(
+                    color:
+                        isDark
+                            ? NeoBrutalismTheme.darkText
+                            : NeoBrutalismTheme.primaryBlack,
+                  ),
                 ),
                 actions: [
                   TextButton(
                     onPressed: () => Get.back(result: false),
-                    child: const Text('Cancel'),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color:
+                            isDark
+                                ? NeoBrutalismTheme.darkText
+                                : NeoBrutalismTheme.primaryBlack,
+                      ),
+                    ),
                   ),
                   TextButton(
                     onPressed: () => Get.back(result: true),
@@ -751,7 +925,10 @@ class ExpenseView extends GetView<ExpenseController> {
         Get.snackbar(
           'Deleted',
           '${income.title} removed',
-          backgroundColor: NeoBrutalismTheme.accentGreen,
+          backgroundColor: _getThemedColor(
+            NeoBrutalismTheme.accentGreen,
+            isDark,
+          ),
           colorText: NeoBrutalismTheme.primaryBlack,
           borderWidth: 3,
           borderColor: NeoBrutalismTheme.primaryBlack,
@@ -760,13 +937,19 @@ class ExpenseView extends GetView<ExpenseController> {
       },
       child: NeoCard(
         onTap: () => Get.toNamed('/income-detail', arguments: income),
+        color:
+            isDark
+                ? NeoBrutalismTheme.darkSurface
+                : NeoBrutalismTheme.primaryWhite,
+        borderColor: NeoBrutalismTheme.primaryBlack,
         child: Row(
           children: [
             Container(
               width: 60,
               height: 60,
               decoration: NeoBrutalismTheme.neoBox(
-                color: NeoBrutalismTheme.accentGreen,
+                color: _getThemedColor(NeoBrutalismTheme.accentGreen, isDark),
+                borderColor: NeoBrutalismTheme.primaryBlack,
               ),
               child: const Center(
                 child: Icon(
@@ -783,9 +966,13 @@ class ExpenseView extends GetView<ExpenseController> {
                 children: [
                   Text(
                     income.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
+                      color:
+                          isDark
+                              ? NeoBrutalismTheme.darkText
+                              : NeoBrutalismTheme.primaryBlack,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -798,7 +985,7 @@ class ExpenseView extends GetView<ExpenseController> {
                           income.source,
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -806,7 +993,10 @@ class ExpenseView extends GetView<ExpenseController> {
                       const SizedBox(width: 8),
                       Text(
                         '• ${income.date.day}/${income.date.month}/${income.date.year}',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        ),
                       ),
                     ],
                   ),

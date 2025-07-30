@@ -45,6 +45,27 @@ class _AddExpenseViewState extends State<AddExpenseView>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
+  // Helper method to get muted colors for dark theme
+  Color _getThemedColor(Color color, bool isDark) {
+    if (!isDark) return color;
+
+    // Return slightly muted versions of colors for dark theme
+    if (color == NeoBrutalismTheme.accentYellow) {
+      return Color(0xFFE6B800); // Slightly darker yellow
+    } else if (color == NeoBrutalismTheme.accentPink) {
+      return Color(0xFFE667A0); // Slightly darker pink
+    } else if (color == NeoBrutalismTheme.accentBlue) {
+      return Color(0xFF4D94FF); // Slightly darker blue
+    } else if (color == NeoBrutalismTheme.accentGreen) {
+      return Color(0xFF00CC66); // Slightly darker green
+    } else if (color == NeoBrutalismTheme.accentOrange) {
+      return Color(0xFFFF8533); // Slightly darker orange
+    } else if (color == NeoBrutalismTheme.accentPurple) {
+      return Color(0xFF9966FF); // Slightly darker purple
+    }
+    return color;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -127,7 +148,7 @@ class _AddExpenseViewState extends State<AddExpenseView>
     super.dispose();
   }
 
-  Future<void> _pickReceipt() async {
+  Future<void> _pickReceipt(bool isDark) async {
     final ImagePicker picker = ImagePicker();
 
     final ImageSource? source = await showModalBottomSheet<ImageSource>(
@@ -137,14 +158,25 @@ class _AddExpenseViewState extends State<AddExpenseView>
           (context) => Container(
             padding: const EdgeInsets.all(20),
             decoration: NeoBrutalismTheme.neoBoxRounded(
-              color: NeoBrutalismTheme.primaryWhite,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkSurface
+                      : NeoBrutalismTheme.primaryWhite,
+              borderColor: NeoBrutalismTheme.primaryBlack,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
+                Text(
                   'SELECT IMAGE SOURCE',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color:
+                        isDark
+                            ? NeoBrutalismTheme.darkText
+                            : NeoBrutalismTheme.primaryBlack,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Row(
@@ -154,11 +186,13 @@ class _AddExpenseViewState extends State<AddExpenseView>
                       icon: Icons.camera_alt,
                       label: 'CAMERA',
                       onTap: () => Navigator.pop(context, ImageSource.camera),
+                      isDark: isDark,
                     ),
                     _buildImageSourceOption(
                       icon: Icons.photo_library,
                       label: 'GALLERY',
                       onTap: () => Navigator.pop(context, ImageSource.gallery),
+                      isDark: isDark,
                     ),
                   ],
                 ),
@@ -182,13 +216,15 @@ class _AddExpenseViewState extends State<AddExpenseView>
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    required bool isDark,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: NeoBrutalismTheme.neoBox(
-          color: NeoBrutalismTheme.accentPurple,
+          color: _getThemedColor(NeoBrutalismTheme.accentPurple, isDark),
+          borderColor: NeoBrutalismTheme.primaryBlack,
         ),
         child: Column(
           children: [
@@ -196,7 +232,11 @@ class _AddExpenseViewState extends State<AddExpenseView>
             const SizedBox(height: 8),
             Text(
               label,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: NeoBrutalismTheme.primaryBlack,
+              ),
             ),
           ],
         ),
@@ -204,7 +244,7 @@ class _AddExpenseViewState extends State<AddExpenseView>
     );
   }
 
-  Future<void> _selectDate() async {
+  Future<void> _selectDate(bool isDark) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
@@ -213,11 +253,17 @@ class _AddExpenseViewState extends State<AddExpenseView>
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: ColorScheme.light(
               primary: NeoBrutalismTheme.primaryBlack,
               onPrimary: NeoBrutalismTheme.primaryWhite,
-              surface: NeoBrutalismTheme.primaryWhite,
-              onSurface: NeoBrutalismTheme.primaryBlack,
+              surface:
+                  isDark
+                      ? NeoBrutalismTheme.darkSurface
+                      : NeoBrutalismTheme.primaryWhite,
+              onSurface:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
             ),
           ),
           child: child!,
@@ -299,14 +345,25 @@ class _AddExpenseViewState extends State<AddExpenseView>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: NeoBrutalismTheme.primaryWhite,
+      backgroundColor:
+          isDark
+              ? NeoBrutalismTheme.darkBackground
+              : NeoBrutalismTheme.primaryWhite,
       appBar: AppBar(
         title: Text(
           _isEditMode ? 'EDIT EXPENSE' : 'ADD EXPENSE',
-          style: const TextStyle(fontWeight: FontWeight.w900),
+          style: const TextStyle(
+            fontWeight: FontWeight.w900,
+            color: NeoBrutalismTheme.primaryBlack,
+          ),
         ),
-        backgroundColor: NeoBrutalismTheme.accentOrange,
+        backgroundColor: _getThemedColor(
+          NeoBrutalismTheme.accentOrange,
+          isDark,
+        ),
         foregroundColor: NeoBrutalismTheme.primaryBlack,
         elevation: 0,
       ),
@@ -319,25 +376,25 @@ class _AddExpenseViewState extends State<AddExpenseView>
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _buildTitleField(),
+                _buildTitleField(isDark),
                 const SizedBox(height: 16),
-                _buildAmountField(),
+                _buildAmountField(isDark),
                 const SizedBox(height: 16),
-                _buildCategorySelector(),
+                _buildCategorySelector(isDark),
                 const SizedBox(height: 16),
-                _buildDateSelector(),
+                _buildDateSelector(isDark),
                 const SizedBox(height: 16),
-                _buildDescriptionField(),
+                _buildDescriptionField(isDark),
                 const SizedBox(height: 16),
-                _buildLocationField(),
+                _buildLocationField(isDark),
                 const SizedBox(height: 16),
-                _buildTagsField(),
+                _buildTagsField(isDark),
                 const SizedBox(height: 16),
-                _buildRecurringToggle(),
+                _buildRecurringToggle(isDark),
                 const SizedBox(height: 16),
-                _buildReceiptSection(),
+                _buildReceiptSection(isDark),
                 const SizedBox(height: 32),
-                _buildSaveButton(),
+                _buildSaveButton(isDark),
               ],
             ),
           ),
@@ -346,11 +403,12 @@ class _AddExpenseViewState extends State<AddExpenseView>
     );
   }
 
-  Widget _buildTitleField() {
+  Widget _buildTitleField(bool isDark) {
     return NeoInput(
       controller: _titleController,
       label: 'EXPENSE TITLE',
       hint: 'e.g., Coffee at Starbucks',
+      isDark: isDark,
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
           return 'Please enter a title';
@@ -363,13 +421,14 @@ class _AddExpenseViewState extends State<AddExpenseView>
     );
   }
 
-  Widget _buildAmountField() {
+  Widget _buildAmountField(bool isDark) {
     return NeoInput(
       controller: _amountController,
       label: 'AMOUNT',
       hint: '0.00',
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       prefixText: '₹ ',
+      isDark: isDark,
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Please enter an amount';
@@ -386,16 +445,19 @@ class _AddExpenseViewState extends State<AddExpenseView>
     );
   }
 
-  Widget _buildCategorySelector() {
+  Widget _buildCategorySelector(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'CATEGORY',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w900,
-            color: NeoBrutalismTheme.primaryBlack,
+            color:
+                isDark
+                    ? NeoBrutalismTheme.darkText
+                    : NeoBrutalismTheme.primaryBlack,
           ),
         ),
         const SizedBox(height: 8),
@@ -403,12 +465,18 @@ class _AddExpenseViewState extends State<AddExpenseView>
           Container(
             padding: const EdgeInsets.all(20),
             decoration: NeoBrutalismTheme.neoBox(
-              color: NeoBrutalismTheme.primaryWhite,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkSurface
+                      : NeoBrutalismTheme.primaryWhite,
+              borderColor: NeoBrutalismTheme.primaryBlack,
             ),
-            child: const Center(
+            child: Center(
               child: Text(
                 'No categories available. Please add categories first.',
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(
+                  color: isDark ? Colors.grey[400] : Colors.grey,
+                ),
               ),
             ),
           )
@@ -436,9 +504,12 @@ class _AddExpenseViewState extends State<AddExpenseView>
                       decoration: NeoBrutalismTheme.neoBoxRounded(
                         color:
                             isSelected
-                                ? category.colorValue
-                                : NeoBrutalismTheme.primaryWhite,
+                                ? _getThemedColor(category.colorValue, isDark)
+                                : (isDark
+                                    ? NeoBrutalismTheme.darkSurface
+                                    : NeoBrutalismTheme.primaryWhite),
                         offset: isSelected ? 2 : 5,
+                        borderColor: NeoBrutalismTheme.primaryBlack,
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -456,8 +527,11 @@ class _AddExpenseViewState extends State<AddExpenseView>
                               color:
                                   isSelected
                                       ? NeoBrutalismTheme.primaryBlack
-                                      : NeoBrutalismTheme.primaryBlack
-                                          .withOpacity(0.7),
+                                      : (isDark
+                                          ? NeoBrutalismTheme.darkText
+                                              .withOpacity(0.7)
+                                          : NeoBrutalismTheme.primaryBlack
+                                              .withOpacity(0.7)),
                             ),
                             textAlign: TextAlign.center,
                             overflow: TextOverflow.ellipsis,
@@ -474,39 +548,52 @@ class _AddExpenseViewState extends State<AddExpenseView>
     );
   }
 
-  Widget _buildDateSelector() {
+  Widget _buildDateSelector(bool isDark) {
     return GestureDetector(
-      onTap: _selectDate,
+      onTap: () => _selectDate(isDark),
       child: NeoCard(
-        color: NeoBrutalismTheme.primaryWhite,
+        color:
+            isDark
+                ? NeoBrutalismTheme.darkSurface
+                : NeoBrutalismTheme.primaryWhite,
+        borderColor: NeoBrutalismTheme.primaryBlack,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'DATE',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
-                    color: NeoBrutalismTheme.primaryBlack,
+                    color:
+                        isDark
+                            ? NeoBrutalismTheme.darkText
+                            : NeoBrutalismTheme.primaryBlack,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: NeoBrutalismTheme.primaryBlack,
+                    color:
+                        isDark
+                            ? NeoBrutalismTheme.darkText
+                            : NeoBrutalismTheme.primaryBlack,
                   ),
                 ),
               ],
             ),
-            const Icon(
+            Icon(
               Icons.calendar_today,
-              color: NeoBrutalismTheme.primaryBlack,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
             ),
           ],
         ),
@@ -514,12 +601,13 @@ class _AddExpenseViewState extends State<AddExpenseView>
     );
   }
 
-  Widget _buildDescriptionField() {
+  Widget _buildDescriptionField(bool isDark) {
     return NeoInput(
       controller: _descriptionController,
       label: 'DESCRIPTION (OPTIONAL)',
       hint: 'Add any notes...',
       maxLines: 3,
+      isDark: isDark,
       validator: (value) {
         if (value != null && value.trim().length > 500) {
           return 'Description must be less than 500 characters';
@@ -529,25 +617,29 @@ class _AddExpenseViewState extends State<AddExpenseView>
     );
   }
 
-  Widget _buildLocationField() {
+  Widget _buildLocationField(bool isDark) {
     return NeoInput(
       controller: _locationController,
       label: 'LOCATION (OPTIONAL)',
       hint: 'Where did you spend?',
       suffixIcon: Icons.location_on,
+      isDark: isDark,
     );
   }
 
-  Widget _buildTagsField() {
+  Widget _buildTagsField(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'TAGS (OPTIONAL)',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w900,
-            color: NeoBrutalismTheme.primaryBlack,
+            color:
+                isDark
+                    ? NeoBrutalismTheme.darkText
+                    : NeoBrutalismTheme.primaryBlack,
           ),
         ),
         const SizedBox(height: 8),
@@ -569,7 +661,10 @@ class _AddExpenseViewState extends State<AddExpenseView>
                     _tags.remove(tag);
                   });
                 },
-                backgroundColor: NeoBrutalismTheme.accentYellow,
+                backgroundColor: _getThemedColor(
+                  NeoBrutalismTheme.accentYellow,
+                  isDark,
+                ),
                 deleteIconColor: NeoBrutalismTheme.primaryBlack,
                 side: const BorderSide(
                   color: NeoBrutalismTheme.primaryBlack,
@@ -578,17 +673,20 @@ class _AddExpenseViewState extends State<AddExpenseView>
               ),
             ),
             ActionChip(
-              label: const Text(
+              label: Text(
                 'ADD TAG',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: NeoBrutalismTheme.primaryBlack,
+                  color:
+                      isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack,
                 ),
               ),
               onPressed: () async {
                 final String? tag = await showDialog<String>(
                   context: context,
-                  builder: (context) => _TagDialog(),
+                  builder: (context) => const _TagDialog(),
                 );
                 if (tag != null && tag.isNotEmpty && !_tags.contains(tag)) {
                   setState(() {
@@ -596,7 +694,10 @@ class _AddExpenseViewState extends State<AddExpenseView>
                   });
                 }
               },
-              backgroundColor: NeoBrutalismTheme.primaryWhite,
+              backgroundColor:
+                  isDark
+                      ? NeoBrutalismTheme.darkSurface
+                      : NeoBrutalismTheme.primaryWhite,
               side: const BorderSide(
                 color: NeoBrutalismTheme.primaryBlack,
                 width: 2,
@@ -608,20 +709,27 @@ class _AddExpenseViewState extends State<AddExpenseView>
     );
   }
 
-  Widget _buildRecurringToggle() {
+  Widget _buildRecurringToggle(bool isDark) {
     return NeoCard(
-      color: NeoBrutalismTheme.primaryWhite,
+      color:
+          isDark
+              ? NeoBrutalismTheme.darkSurface
+              : NeoBrutalismTheme.primaryWhite,
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'RECURRING EXPENSE',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w900,
-                  color: NeoBrutalismTheme.primaryBlack,
+                  color:
+                      isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack,
                 ),
               ),
               Switch(
@@ -631,38 +739,46 @@ class _AddExpenseViewState extends State<AddExpenseView>
                     _isRecurring = value;
                   });
                 },
-                activeColor: NeoBrutalismTheme.accentOrange,
-                activeTrackColor: NeoBrutalismTheme.accentOrange.withOpacity(
-                  0.5,
+                activeColor: _getThemedColor(
+                  NeoBrutalismTheme.accentOrange,
+                  isDark,
                 ),
-                inactiveThumbColor: NeoBrutalismTheme.primaryBlack,
-                inactiveTrackColor: Colors.grey.shade300,
+                activeTrackColor: _getThemedColor(
+                  NeoBrutalismTheme.accentOrange,
+                  isDark,
+                ).withOpacity(0.5),
+                inactiveThumbColor:
+                    isDark
+                        ? NeoBrutalismTheme.darkText
+                        : NeoBrutalismTheme.primaryBlack,
+                inactiveTrackColor:
+                    isDark ? Colors.grey.shade700 : Colors.grey.shade300,
               ),
             ],
           ),
           if (_isRecurring) ...[
             const SizedBox(height: 16),
-            const Align(
+            Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'FREQUENCY',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: Colors.grey,
+                  color: isDark ? Colors.grey[400] : Colors.grey,
                 ),
               ),
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                _buildRecurringOption('DAILY', 'daily'),
+                _buildRecurringOption('DAILY', 'daily', isDark),
                 const SizedBox(width: 8),
-                _buildRecurringOption('WEEKLY', 'weekly'),
+                _buildRecurringOption('WEEKLY', 'weekly', isDark),
                 const SizedBox(width: 8),
-                _buildRecurringOption('MONTHLY', 'monthly'),
+                _buildRecurringOption('MONTHLY', 'monthly', isDark),
                 const SizedBox(width: 8),
-                _buildRecurringOption('YEARLY', 'yearly'),
+                _buildRecurringOption('YEARLY', 'yearly', isDark),
               ],
             ),
           ],
@@ -671,7 +787,7 @@ class _AddExpenseViewState extends State<AddExpenseView>
     );
   }
 
-  Widget _buildRecurringOption(String label, String value) {
+  Widget _buildRecurringOption(String label, String value, bool isDark) {
     final isSelected = _recurringType == value;
     return Expanded(
       child: GestureDetector(
@@ -686,9 +802,12 @@ class _AddExpenseViewState extends State<AddExpenseView>
           decoration: NeoBrutalismTheme.neoBox(
             color:
                 isSelected
-                    ? NeoBrutalismTheme.accentBlue
-                    : NeoBrutalismTheme.primaryWhite,
+                    ? _getThemedColor(NeoBrutalismTheme.accentBlue, isDark)
+                    : (isDark
+                        ? NeoBrutalismTheme.darkBackground
+                        : NeoBrutalismTheme.primaryWhite),
             offset: isSelected ? 2 : 5,
+            borderColor: NeoBrutalismTheme.primaryBlack,
           ),
           child: Center(
             child: Text(
@@ -699,7 +818,9 @@ class _AddExpenseViewState extends State<AddExpenseView>
                 color:
                     isSelected
                         ? NeoBrutalismTheme.primaryBlack
-                        : NeoBrutalismTheme.primaryBlack.withOpacity(0.7),
+                        : (isDark
+                            ? NeoBrutalismTheme.darkText.withOpacity(0.7)
+                            : NeoBrutalismTheme.primaryBlack.withOpacity(0.7)),
               ),
             ),
           ),
@@ -708,18 +829,25 @@ class _AddExpenseViewState extends State<AddExpenseView>
     );
   }
 
-  Widget _buildReceiptSection() {
+  Widget _buildReceiptSection(bool isDark) {
     return NeoCard(
-      color: NeoBrutalismTheme.primaryWhite,
+      color:
+          isDark
+              ? NeoBrutalismTheme.darkSurface
+              : NeoBrutalismTheme.primaryWhite,
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'RECEIPT (OPTIONAL)',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w900,
-              color: NeoBrutalismTheme.primaryBlack,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
             ),
           ),
           const SizedBox(height: 16),
@@ -727,7 +855,11 @@ class _AddExpenseViewState extends State<AddExpenseView>
             Container(
               height: 200,
               decoration: NeoBrutalismTheme.neoBox(
-                color: NeoBrutalismTheme.primaryWhite,
+                color:
+                    isDark
+                        ? NeoBrutalismTheme.darkBackground
+                        : NeoBrutalismTheme.primaryWhite,
+                borderColor: NeoBrutalismTheme.primaryBlack,
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(4),
@@ -739,19 +871,22 @@ class _AddExpenseViewState extends State<AddExpenseView>
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
-                          color: Colors.grey[200],
-                          child: const Column(
+                          color: isDark ? Colors.grey[800] : Colors.grey[200],
+                          child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
                                 Icons.error_outline,
                                 size: 48,
-                                color: Colors.grey,
+                                color: isDark ? Colors.grey[400] : Colors.grey,
                               ),
-                              SizedBox(height: 8),
+                              const SizedBox(height: 8),
                               Text(
                                 'Failed to load image',
-                                style: TextStyle(color: Colors.grey),
+                                style: TextStyle(
+                                  color:
+                                      isDark ? Colors.grey[400] : Colors.grey,
+                                ),
                               ),
                             ],
                           ),
@@ -793,8 +928,8 @@ class _AddExpenseViewState extends State<AddExpenseView>
           ],
           NeoButton(
             text: _receiptImage != null ? 'CHANGE RECEIPT' : 'ADD RECEIPT',
-            onPressed: _pickReceipt,
-            color: NeoBrutalismTheme.accentPurple,
+            onPressed: () => _pickReceipt(isDark),
+            color: _getThemedColor(NeoBrutalismTheme.accentPurple, isDark),
             icon: Icons.camera_alt,
           ),
         ],
@@ -802,46 +937,68 @@ class _AddExpenseViewState extends State<AddExpenseView>
     );
   }
 
-  Widget _buildSaveButton() {
+  Widget _buildSaveButton(bool isDark) {
     return NeoButton(
       text: _isEditMode ? 'UPDATE EXPENSE' : 'SAVE EXPENSE',
       onPressed: _saveExpense,
-      color:
-          _isEditMode
-              ? NeoBrutalismTheme.accentBlue
-              : NeoBrutalismTheme.accentGreen,
+      color: _getThemedColor(
+        _isEditMode
+            ? NeoBrutalismTheme.accentBlue
+            : NeoBrutalismTheme.accentGreen,
+        isDark,
+      ),
       height: 64,
       icon: _isEditMode ? Icons.update : Icons.save,
     );
   }
 }
 
-class _TagDialog extends StatelessWidget {
+class _TagDialog extends StatefulWidget {
+  const _TagDialog();
+
+  @override
+  State<_TagDialog> createState() => _TagDialogState();
+}
+
+class _TagDialogState extends State<_TagDialog> {
   final _controller = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  _TagDialog({super.key});
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: NeoBrutalismTheme.neoBoxRounded(
-          color: NeoBrutalismTheme.primaryWhite,
+          color:
+              isDark
+                  ? NeoBrutalismTheme.darkSurface
+                  : NeoBrutalismTheme.primaryWhite,
+          borderColor: NeoBrutalismTheme.primaryBlack,
         ),
         child: Form(
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 'ADD TAG',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
-                  color: NeoBrutalismTheme.primaryBlack,
+                  color:
+                      isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack,
                 ),
               ),
               const SizedBox(height: 16),
@@ -849,6 +1006,7 @@ class _TagDialog extends StatelessWidget {
                 controller: _controller,
                 label: 'TAG NAME',
                 hint: 'e.g., Business, Personal',
+                isDark: isDark,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Please enter a tag name';
@@ -866,8 +1024,14 @@ class _TagDialog extends StatelessWidget {
                     child: NeoButton(
                       text: 'CANCEL',
                       onPressed: () => Get.back(),
-                      color: NeoBrutalismTheme.primaryWhite,
-                      textColor: NeoBrutalismTheme.primaryBlack,
+                      color:
+                          isDark
+                              ? NeoBrutalismTheme.darkBackground
+                              : NeoBrutalismTheme.primaryWhite,
+                      textColor:
+                          isDark
+                              ? NeoBrutalismTheme.darkText
+                              : NeoBrutalismTheme.primaryBlack,
                     ),
                   ),
                   const SizedBox(width: 12),

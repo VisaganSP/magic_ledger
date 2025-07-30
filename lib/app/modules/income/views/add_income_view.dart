@@ -41,12 +41,28 @@ class _AddIncomeViewState extends State<AddIncomeView> {
     'Other',
   ];
 
-  final List<String> _recurringTypes = [
-    'daily',
-    'weekly',
-    'monthly',
-    'yearly',
-  ];
+  final List<String> _recurringTypes = ['daily', 'weekly', 'monthly', 'yearly'];
+
+  // Helper method to get muted colors for dark theme
+  Color _getThemedColor(Color color, bool isDark) {
+    if (!isDark) return color;
+
+    // Return slightly muted versions of colors for dark theme
+    if (color == NeoBrutalismTheme.accentYellow) {
+      return Color(0xFFE6B800); // Slightly darker yellow
+    } else if (color == NeoBrutalismTheme.accentPink) {
+      return Color(0xFFE667A0); // Slightly darker pink
+    } else if (color == NeoBrutalismTheme.accentBlue) {
+      return Color(0xFF4D94FF); // Slightly darker blue
+    } else if (color == NeoBrutalismTheme.accentGreen) {
+      return Color(0xFF00CC66); // Slightly darker green
+    } else if (color == NeoBrutalismTheme.accentOrange) {
+      return Color(0xFFFF8533); // Slightly darker orange
+    } else if (color == NeoBrutalismTheme.accentPurple) {
+      return Color(0xFF9966FF); // Slightly darker purple
+    }
+    return color;
+  }
 
   @override
   void initState() {
@@ -85,7 +101,7 @@ class _AddIncomeViewState extends State<AddIncomeView> {
     super.dispose();
   }
 
-  Future<void> _selectDate() async {
+  Future<void> _selectDate(bool isDark) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
@@ -94,11 +110,17 @@ class _AddIncomeViewState extends State<AddIncomeView> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: ColorScheme.light(
               primary: NeoBrutalismTheme.primaryBlack,
               onPrimary: NeoBrutalismTheme.primaryWhite,
-              surface: NeoBrutalismTheme.primaryWhite,
-              onSurface: NeoBrutalismTheme.primaryBlack,
+              surface:
+                  isDark
+                      ? NeoBrutalismTheme.darkSurface
+                      : NeoBrutalismTheme.primaryWhite,
+              onSurface:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
             ),
           ),
           child: child!,
@@ -116,14 +138,18 @@ class _AddIncomeViewState extends State<AddIncomeView> {
   void _saveIncome() {
     if (_formKey.currentState!.validate()) {
       final income = IncomeModel(
-        id: _isEditMode ? _editingIncome!.id : DateTime.now().millisecondsSinceEpoch.toString(),
+        id:
+            _isEditMode
+                ? _editingIncome!.id
+                : DateTime.now().millisecondsSinceEpoch.toString(),
         title: _titleController.text.trim(),
         amount: double.parse(_amountController.text),
         source: _selectedSource,
         date: _selectedDate,
-        description: _descriptionController.text.trim().isEmpty
-            ? null
-            : _descriptionController.text.trim(),
+        description:
+            _descriptionController.text.trim().isEmpty
+                ? null
+                : _descriptionController.text.trim(),
         isRecurring: _isRecurring,
         recurringType: _isRecurring ? _recurringType : null,
       );
@@ -158,14 +184,22 @@ class _AddIncomeViewState extends State<AddIncomeView> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: NeoBrutalismTheme.primaryWhite,
+      backgroundColor:
+          isDark
+              ? NeoBrutalismTheme.darkBackground
+              : NeoBrutalismTheme.primaryWhite,
       appBar: AppBar(
         title: Text(
           _isEditMode ? 'EDIT INCOME' : 'ADD INCOME',
-          style: const TextStyle(fontWeight: FontWeight.w900),
+          style: const TextStyle(
+            fontWeight: FontWeight.w900,
+            color: NeoBrutalismTheme.primaryBlack,
+          ),
         ),
-        backgroundColor: NeoBrutalismTheme.accentGreen,
+        backgroundColor: _getThemedColor(NeoBrutalismTheme.accentGreen, isDark),
         foregroundColor: NeoBrutalismTheme.primaryBlack,
         elevation: 0,
       ),
@@ -174,30 +208,31 @@ class _AddIncomeViewState extends State<AddIncomeView> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _buildTitleInput(),
+            _buildTitleInput(isDark),
             const SizedBox(height: 16),
-            _buildAmountInput(),
+            _buildAmountInput(isDark),
             const SizedBox(height: 16),
-            _buildSourceSelector(),
+            _buildSourceSelector(isDark),
             const SizedBox(height: 16),
-            _buildDateSelector(),
+            _buildDateSelector(isDark),
             const SizedBox(height: 16),
-            _buildDescriptionInput(),
+            _buildDescriptionInput(isDark),
             const SizedBox(height: 16),
-            _buildRecurringToggle(),
+            _buildRecurringToggle(isDark),
             const SizedBox(height: 32),
-            _buildSaveButton(),
+            _buildSaveButton(isDark),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTitleInput() {
+  Widget _buildTitleInput(bool isDark) {
     return NeoInput(
       controller: _titleController,
       label: 'INCOME TITLE',
       hint: 'e.g., Monthly Salary',
+      isDark: isDark,
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
           return 'Please enter a title';
@@ -210,13 +245,14 @@ class _AddIncomeViewState extends State<AddIncomeView> {
     );
   }
 
-  Widget _buildAmountInput() {
+  Widget _buildAmountInput(bool isDark) {
     return NeoInput(
       controller: _amountController,
       label: 'AMOUNT',
       hint: '0.00',
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       prefixText: '₹ ',
+      isDark: isDark,
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Please enter an amount';
@@ -233,88 +269,119 @@ class _AddIncomeViewState extends State<AddIncomeView> {
     );
   }
 
-  Widget _buildSourceSelector() {
+  Widget _buildSourceSelector(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'INCOME SOURCE',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w900,
-            color: NeoBrutalismTheme.primaryBlack,
+            color:
+                isDark
+                    ? NeoBrutalismTheme.darkText
+                    : NeoBrutalismTheme.primaryBlack,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: NeoBrutalismTheme.neoBox(
-            color: NeoBrutalismTheme.primaryWhite,
+            color:
+                isDark
+                    ? NeoBrutalismTheme.darkSurface
+                    : NeoBrutalismTheme.primaryWhite,
+            borderColor: NeoBrutalismTheme.primaryBlack,
           ),
           child: DropdownButton<String>(
             value: _selectedSource,
             isExpanded: true,
             underline: const SizedBox(),
-            icon: const Icon(
+            dropdownColor:
+                isDark
+                    ? NeoBrutalismTheme.darkSurface
+                    : NeoBrutalismTheme.primaryWhite,
+            icon: Icon(
               Icons.arrow_drop_down,
-              color: NeoBrutalismTheme.primaryBlack,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
             ),
             onChanged: (value) {
               setState(() {
                 _selectedSource = value!;
               });
             },
-            items: _incomeSources.map((source) {
-              return DropdownMenuItem(
-                value: source,
-                child: Text(
-                  source,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: NeoBrutalismTheme.primaryBlack,
-                  ),
-                ),
-              );
-            }).toList(),
+            items:
+                _incomeSources.map((source) {
+                  return DropdownMenuItem(
+                    value: source,
+                    child: Text(
+                      source,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color:
+                            isDark
+                                ? NeoBrutalismTheme.darkText
+                                : NeoBrutalismTheme.primaryBlack,
+                      ),
+                    ),
+                  );
+                }).toList(),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildDateSelector() {
+  Widget _buildDateSelector(bool isDark) {
     return GestureDetector(
-      onTap: _selectDate,
+      onTap: () => _selectDate(isDark),
       child: NeoCard(
-        color: NeoBrutalismTheme.primaryWhite,
+        color:
+            isDark
+                ? NeoBrutalismTheme.darkSurface
+                : NeoBrutalismTheme.primaryWhite,
+        borderColor: NeoBrutalismTheme.primaryBlack,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'DATE',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
-                    color: NeoBrutalismTheme.primaryBlack,
+                    color:
+                        isDark
+                            ? NeoBrutalismTheme.darkText
+                            : NeoBrutalismTheme.primaryBlack,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: NeoBrutalismTheme.primaryBlack,
+                    color:
+                        isDark
+                            ? NeoBrutalismTheme.darkText
+                            : NeoBrutalismTheme.primaryBlack,
                   ),
                 ),
               ],
             ),
-            const Icon(
+            Icon(
               Icons.calendar_today,
-              color: NeoBrutalismTheme.primaryBlack,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
             ),
           ],
         ),
@@ -322,12 +389,13 @@ class _AddIncomeViewState extends State<AddIncomeView> {
     );
   }
 
-  Widget _buildDescriptionInput() {
+  Widget _buildDescriptionInput(bool isDark) {
     return NeoInput(
       controller: _descriptionController,
       label: 'DESCRIPTION (OPTIONAL)',
       hint: 'Add any notes...',
       maxLines: 3,
+      isDark: isDark,
       validator: (value) {
         if (value != null && value.trim().length > 500) {
           return 'Description must be less than 500 characters';
@@ -337,20 +405,27 @@ class _AddIncomeViewState extends State<AddIncomeView> {
     );
   }
 
-  Widget _buildRecurringToggle() {
+  Widget _buildRecurringToggle(bool isDark) {
     return NeoCard(
-      color: NeoBrutalismTheme.primaryWhite,
+      color:
+          isDark
+              ? NeoBrutalismTheme.darkSurface
+              : NeoBrutalismTheme.primaryWhite,
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'RECURRING INCOME',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w900,
-                  color: NeoBrutalismTheme.primaryBlack,
+                  color:
+                      isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack,
                 ),
               ),
               Switch(
@@ -360,36 +435,46 @@ class _AddIncomeViewState extends State<AddIncomeView> {
                     _isRecurring = value;
                   });
                 },
-                activeColor: NeoBrutalismTheme.accentGreen,
-                activeTrackColor: NeoBrutalismTheme.accentGreen.withOpacity(0.5),
-                inactiveThumbColor: NeoBrutalismTheme.primaryBlack,
-                inactiveTrackColor: Colors.grey.shade300,
+                activeColor: _getThemedColor(
+                  NeoBrutalismTheme.accentGreen,
+                  isDark,
+                ),
+                activeTrackColor: _getThemedColor(
+                  NeoBrutalismTheme.accentGreen,
+                  isDark,
+                ).withOpacity(0.5),
+                inactiveThumbColor:
+                    isDark
+                        ? NeoBrutalismTheme.darkText
+                        : NeoBrutalismTheme.primaryBlack,
+                inactiveTrackColor:
+                    isDark ? Colors.grey.shade700 : Colors.grey.shade300,
               ),
             ],
           ),
           if (_isRecurring) ...[
             const SizedBox(height: 16),
-            const Align(
+            Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'FREQUENCY',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: Colors.grey,
+                  color: isDark ? Colors.grey[400] : Colors.grey,
                 ),
               ),
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                _buildRecurringOption('DAILY', 'daily'),
+                _buildRecurringOption('DAILY', 'daily', isDark),
                 const SizedBox(width: 8),
-                _buildRecurringOption('WEEKLY', 'weekly'),
+                _buildRecurringOption('WEEKLY', 'weekly', isDark),
                 const SizedBox(width: 8),
-                _buildRecurringOption('MONTHLY', 'monthly'),
+                _buildRecurringOption('MONTHLY', 'monthly', isDark),
                 const SizedBox(width: 8),
-                _buildRecurringOption('YEARLY', 'yearly'),
+                _buildRecurringOption('YEARLY', 'yearly', isDark),
               ],
             ),
           ],
@@ -398,7 +483,7 @@ class _AddIncomeViewState extends State<AddIncomeView> {
     );
   }
 
-  Widget _buildRecurringOption(String label, String value) {
+  Widget _buildRecurringOption(String label, String value, bool isDark) {
     final isSelected = _recurringType == value;
     return Expanded(
       child: GestureDetector(
@@ -411,10 +496,14 @@ class _AddIncomeViewState extends State<AddIncomeView> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: NeoBrutalismTheme.neoBox(
-            color: isSelected
-                ? NeoBrutalismTheme.accentGreen
-                : NeoBrutalismTheme.primaryWhite,
+            color:
+                isSelected
+                    ? _getThemedColor(NeoBrutalismTheme.accentGreen, isDark)
+                    : (isDark
+                        ? NeoBrutalismTheme.darkBackground
+                        : NeoBrutalismTheme.primaryWhite),
             offset: isSelected ? 2 : 5,
+            borderColor: NeoBrutalismTheme.primaryBlack,
           ),
           child: Center(
             child: Text(
@@ -422,9 +511,12 @@ class _AddIncomeViewState extends State<AddIncomeView> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w900,
-                color: isSelected
-                    ? NeoBrutalismTheme.primaryBlack
-                    : NeoBrutalismTheme.primaryBlack.withOpacity(0.7),
+                color:
+                    isSelected
+                        ? NeoBrutalismTheme.primaryBlack
+                        : (isDark
+                            ? NeoBrutalismTheme.darkText.withOpacity(0.7)
+                            : NeoBrutalismTheme.primaryBlack.withOpacity(0.7)),
               ),
             ),
           ),
@@ -433,11 +525,16 @@ class _AddIncomeViewState extends State<AddIncomeView> {
     );
   }
 
-  Widget _buildSaveButton() {
+  Widget _buildSaveButton(bool isDark) {
     return NeoButton(
       text: _isEditMode ? 'UPDATE INCOME' : 'SAVE INCOME',
       onPressed: _saveIncome,
-      color: _isEditMode ? NeoBrutalismTheme.accentBlue : NeoBrutalismTheme.accentGreen,
+      color: _getThemedColor(
+        _isEditMode
+            ? NeoBrutalismTheme.accentBlue
+            : NeoBrutalismTheme.accentGreen,
+        isDark,
+      ),
       height: 64,
       icon: _isEditMode ? Icons.update : Icons.save,
     );

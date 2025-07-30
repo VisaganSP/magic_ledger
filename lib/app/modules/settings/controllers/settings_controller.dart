@@ -116,6 +116,7 @@ class SettingsController extends GetxController {
       await Hive.box('todos').clear();
       await Hive.box('budgets').clear();
       await Hive.box('receipts').clear();
+      await Hive.box('income').clear();
       // Don't clear categories and settings
     } catch (e) {
       Get.snackbar(

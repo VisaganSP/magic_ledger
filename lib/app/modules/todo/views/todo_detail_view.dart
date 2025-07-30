@@ -13,13 +13,50 @@ class TodoDetailView extends StatelessWidget {
 
   TodoDetailView({super.key});
 
+  // Helper method to get muted colors for dark theme
+  Color _getThemedColor(Color color, bool isDark) {
+    if (!isDark) return color;
+
+    // Return slightly muted versions of colors for dark theme
+    if (color == NeoBrutalismTheme.accentYellow) {
+      return Color(0xFFE6B800); // Slightly darker yellow
+    } else if (color == NeoBrutalismTheme.accentPink) {
+      return Color(0xFFE667A0); // Slightly darker pink
+    } else if (color == NeoBrutalismTheme.accentBlue) {
+      return Color(0xFF4D94FF); // Slightly darker blue
+    } else if (color == NeoBrutalismTheme.accentGreen) {
+      return Color(0xFF00CC66); // Slightly darker green
+    } else if (color == NeoBrutalismTheme.accentOrange) {
+      return Color(0xFFFF8533); // Slightly darker orange
+    } else if (color == NeoBrutalismTheme.accentPurple) {
+      return Color(0xFF9966FF); // Slightly darker purple
+    }
+    return color;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: NeoBrutalismTheme.primaryWhite,
+      backgroundColor:
+          isDark
+              ? NeoBrutalismTheme.darkBackground
+              : NeoBrutalismTheme.primaryWhite,
       appBar: AppBar(
-        title: const Text('TODO DETAILS'),
-        backgroundColor: _getPriorityColor(todo.priority),
+        title: const Text(
+          'TODO DETAILS',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: NeoBrutalismTheme.primaryBlack,
+          ),
+        ),
+        backgroundColor: _getThemedColor(
+          _getPriorityColor(todo.priority),
+          isDark,
+        ),
+        foregroundColor: NeoBrutalismTheme.primaryBlack,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
@@ -30,7 +67,7 @@ class TodoDetailView extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.delete),
             onPressed: () {
-              _showDeleteDialog(context);
+              _showDeleteDialog(context, isDark);
             },
           ),
         ],
@@ -38,23 +75,24 @@ class TodoDetailView extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildMainInfo(),
+          _buildMainInfo(isDark),
           const SizedBox(height: 24),
-          _buildDetailsSection(),
+          _buildDetailsSection(isDark),
           if (todo.tags != null && todo.tags!.isNotEmpty) ...[
             const SizedBox(height: 24),
-            _buildTagsSection(),
+            _buildTagsSection(isDark),
           ],
           const SizedBox(height: 32),
-          _buildActionButtons(),
+          _buildActionButtons(isDark),
         ],
       ),
     );
   }
 
-  Widget _buildMainInfo() {
+  Widget _buildMainInfo(bool isDark) {
     return NeoCard(
-      color: _getPriorityColor(todo.priority).withOpacity(0.3),
+      color: _getThemedColor(_getPriorityColor(todo.priority), isDark),
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -68,6 +106,11 @@ class TodoDetailView extends StatelessWidget {
                   Get.back();
                 },
                 activeColor: NeoBrutalismTheme.primaryBlack,
+                checkColor: NeoBrutalismTheme.primaryWhite,
+                side: BorderSide(
+                  color: NeoBrutalismTheme.primaryBlack,
+                  width: 2,
+                ),
               ),
               Expanded(
                 child: Column(
@@ -78,6 +121,7 @@ class TodoDetailView extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w900,
+                        color: NeoBrutalismTheme.primaryBlack,
                         decoration:
                             todo.isCompleted
                                 ? TextDecoration.lineThrough
@@ -90,7 +134,9 @@ class TodoDetailView extends StatelessWidget {
                         todo.description!,
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.grey[700],
+                          color: NeoBrutalismTheme.primaryBlack.withOpacity(
+                            0.8,
+                          ),
                           decoration:
                               todo.isCompleted
                                   ? TextDecoration.lineThrough
@@ -108,13 +154,18 @@ class TodoDetailView extends StatelessWidget {
             children: [
               _buildInfoChip(
                 _getPriorityLabel(todo.priority),
-                _getPriorityColor(todo.priority),
+                _getThemedColor(_getPriorityColor(todo.priority), isDark),
+                isDark,
               ),
               const SizedBox(width: 8),
               if (todo.dueDate != null)
                 _buildInfoChip(
                   'Due: ${todo.dueDate!.day}/${todo.dueDate!.month}',
-                  _isOverdue() ? Colors.red : NeoBrutalismTheme.accentBlue,
+                  _getThemedColor(
+                    _isOverdue() ? Colors.red : NeoBrutalismTheme.accentBlue,
+                    isDark,
+                  ),
+                  isDark,
                 ),
             ],
           ),
@@ -123,7 +174,7 @@ class TodoDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoChip(String label, Color color) {
+  Widget _buildInfoChip(String label, Color color, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -141,32 +192,50 @@ class TodoDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailsSection() {
+  Widget _buildDetailsSection(bool isDark) {
     return NeoCard(
+      color:
+          isDark
+              ? NeoBrutalismTheme.darkSurface
+              : NeoBrutalismTheme.primaryWhite,
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'DETAILS',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
+            ),
           ),
           const SizedBox(height: 16),
           _buildDetailRow(
             'Created',
             '${todo.createdAt.day}/${todo.createdAt.month}/${todo.createdAt.year}',
+            isDark,
           ),
           if (todo.hasReminder && todo.reminderTime != null)
             _buildDetailRow(
               'Reminder',
               '${todo.reminderTime!.day}/${todo.reminderTime!.month} at ${todo.reminderTime!.hour}:${todo.reminderTime!.minute.toString().padLeft(2, '0')}',
+              isDark,
             ),
-          _buildDetailRow('Status', todo.isCompleted ? 'Completed' : 'Pending'),
+          _buildDetailRow(
+            'Status',
+            todo.isCompleted ? 'Completed' : 'Pending',
+            isDark,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(String label, String value, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -174,28 +243,47 @@ class TodoDetailView extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: Colors.grey,
+              color: isDark ? Colors.grey[400] : Colors.grey,
             ),
           ),
           Text(
             value,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTagsSection() {
+  Widget _buildTagsSection(bool isDark) {
     return NeoCard(
+      color:
+          isDark
+              ? NeoBrutalismTheme.darkSurface
+              : NeoBrutalismTheme.primaryWhite,
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'TAGS',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
+            ),
           ),
           const SizedBox(height: 16),
           Wrap(
@@ -210,11 +298,18 @@ class TodoDetailView extends StatelessWidget {
                           vertical: 8,
                         ),
                         decoration: NeoBrutalismTheme.neoBox(
-                          color: NeoBrutalismTheme.accentYellow,
+                          color: _getThemedColor(
+                            NeoBrutalismTheme.accentYellow,
+                            isDark,
+                          ),
+                          borderColor: NeoBrutalismTheme.primaryBlack,
                         ),
                         child: Text(
                           tag.toUpperCase(),
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: NeoBrutalismTheme.primaryBlack,
+                          ),
                         ),
                       ),
                     )
@@ -225,7 +320,7 @@ class TodoDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(bool isDark) {
     return Row(
       children: [
         Expanded(
@@ -235,10 +330,12 @@ class TodoDetailView extends StatelessWidget {
               todoController.toggleTodo(todo);
               Get.back();
             },
-            color:
-                todo.isCompleted
-                    ? NeoBrutalismTheme.accentOrange
-                    : NeoBrutalismTheme.accentGreen,
+            color: _getThemedColor(
+              todo.isCompleted
+                  ? NeoBrutalismTheme.accentOrange
+                  : NeoBrutalismTheme.accentGreen,
+              isDark,
+            ),
             icon: todo.isCompleted ? Icons.replay : Icons.check,
           ),
         ),
@@ -274,26 +371,60 @@ class TodoDetailView extends StatelessWidget {
         !todo.isCompleted;
   }
 
-  void _showDeleteDialog(BuildContext context) {
+  void _showDeleteDialog(BuildContext context, bool isDark) {
     Get.dialog(
       Dialog(
         backgroundColor: Colors.transparent,
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: NeoBrutalismTheme.neoBoxRounded(
-            color: NeoBrutalismTheme.primaryWhite,
+            color:
+                isDark
+                    ? NeoBrutalismTheme.darkSurface
+                    : NeoBrutalismTheme.primaryWhite,
+            borderColor: NeoBrutalismTheme.primaryBlack,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'DELETE TODO?',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+              const Icon(
+                Icons.warning_amber_rounded,
+                size: 64,
+                color: Colors.orange,
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
+                'DELETE TODO?',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color:
+                      isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Are you sure you want to delete "${todo.title}"?',
+                style: TextStyle(
+                  fontSize: 16,
+                  color:
+                      isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
                 'This action cannot be undone.',
-                style: TextStyle(fontSize: 16),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? Colors.grey[400] : Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
               Row(
@@ -302,7 +433,14 @@ class TodoDetailView extends StatelessWidget {
                     child: NeoButton(
                       text: 'CANCEL',
                       onPressed: () => Get.back(),
-                      color: NeoBrutalismTheme.primaryWhite,
+                      color:
+                          isDark
+                              ? NeoBrutalismTheme.darkBackground
+                              : NeoBrutalismTheme.primaryWhite,
+                      textColor:
+                          isDark
+                              ? NeoBrutalismTheme.darkText
+                              : NeoBrutalismTheme.primaryBlack,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -311,8 +449,21 @@ class TodoDetailView extends StatelessWidget {
                       text: 'DELETE',
                       onPressed: () {
                         todoController.deleteTodo(todo.id);
-                        Get.back();
-                        Get.back();
+                        Get.back(); // Close dialog
+                        Get.back(); // Go back to previous screen
+                        Get.snackbar(
+                          'Todo Deleted',
+                          '${todo.title} has been removed',
+                          backgroundColor: Colors.red,
+                          colorText: NeoBrutalismTheme.primaryWhite,
+                          borderWidth: 3,
+                          borderColor: NeoBrutalismTheme.primaryBlack,
+                          duration: const Duration(seconds: 2),
+                          icon: const Icon(
+                            Icons.delete_forever,
+                            color: NeoBrutalismTheme.primaryWhite,
+                          ),
+                        );
                       },
                       color: Colors.red,
                       textColor: NeoBrutalismTheme.primaryWhite,

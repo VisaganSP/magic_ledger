@@ -14,46 +14,83 @@ class AnalyticsView extends GetView<AnalyticsController> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: NeoBrutalismTheme.primaryWhite,
+      backgroundColor:
+          isDark
+              ? NeoBrutalismTheme.darkBackground
+              : NeoBrutalismTheme.primaryWhite,
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildHeader(),
+          _buildHeader(isDark),
           const SizedBox(height: 24),
-          _buildDateRangeSelector(),
+          _buildDateRangeSelector(isDark),
           const SizedBox(height: 24),
-          _buildTotalStats(),
+          _buildTotalStats(isDark),
           const SizedBox(height: 24),
-          _buildCategoryBreakdown(),
+          _buildCategoryBreakdown(isDark),
           const SizedBox(height: 24),
-          _buildSpendingTrend(),
+          _buildSpendingTrend(isDark),
           const SizedBox(height: 24),
-          _buildTopExpenses(),
+          _buildTopExpenses(isDark),
           const SizedBox(height: 24),
-          _buildExportSection(),
+          _buildExportSection(isDark),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  // Helper method to get muted colors for dark theme
+  Color _getThemedColor(Color color, bool isDark) {
+    if (!isDark) return color;
+
+    // Return slightly muted versions of colors for dark theme
+    if (color == NeoBrutalismTheme.accentYellow) {
+      return Color(0xFFE6B800); // Slightly darker yellow
+    } else if (color == NeoBrutalismTheme.accentPink) {
+      return Color(0xFFE667A0); // Slightly darker pink
+    } else if (color == NeoBrutalismTheme.accentBlue) {
+      return Color(0xFF4D94FF); // Slightly darker blue
+    } else if (color == NeoBrutalismTheme.accentGreen) {
+      return Color(0xFF00CC66); // Slightly darker green
+    } else if (color == NeoBrutalismTheme.accentOrange) {
+      return Color(0xFFFF8533); // Slightly darker orange
+    } else if (color == NeoBrutalismTheme.accentPurple) {
+      return Color(0xFF9966FF); // Slightly darker purple
+    }
+    return color;
+  }
+
+  Widget _buildHeader(bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text(
+        Text(
           'ANALYTICS',
-          style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w900,
+            color:
+                isDark
+                    ? NeoBrutalismTheme.darkText
+                    : NeoBrutalismTheme.primaryBlack,
+          ),
         ),
         Obx(
           () => Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: NeoBrutalismTheme.neoBox(
-              color: NeoBrutalismTheme.accentBlue,
+              color: _getThemedColor(NeoBrutalismTheme.accentBlue, isDark),
+              borderColor: NeoBrutalismTheme.primaryBlack,
             ),
             child: Text(
               controller.selectedPeriod.value.toUpperCase(),
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: NeoBrutalismTheme.primaryBlack,
+              ),
             ),
           ),
         ),
@@ -61,26 +98,38 @@ class AnalyticsView extends GetView<AnalyticsController> {
     ).animate().fadeIn().slideX(begin: -0.2, end: 0);
   }
 
-  Widget _buildDateRangeSelector() {
+  Widget _buildDateRangeSelector(bool isDark) {
     return NeoCard(
+      color:
+          isDark
+              ? NeoBrutalismTheme.darkSurface
+              : NeoBrutalismTheme.primaryWhite,
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'TIME PERIOD',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
+            ),
           ),
           const SizedBox(height: 16),
           Wrap(
             spacing: 12,
             runSpacing: 12,
             children: [
-              _buildPeriodChip('This Week'),
-              _buildPeriodChip('This Month'),
-              _buildPeriodChip('3 Months'),
-              _buildPeriodChip('6 Months'),
-              _buildPeriodChip('This Year'),
-              _buildPeriodChip('Custom'),
+              _buildPeriodChip('This Week', isDark),
+              _buildPeriodChip('This Month', isDark),
+              _buildPeriodChip('3 Months', isDark),
+              _buildPeriodChip('6 Months', isDark),
+              _buildPeriodChip('This Year', isDark),
+              _buildPeriodChip('Custom', isDark),
             ],
           ),
         ],
@@ -88,7 +137,7 @@ class AnalyticsView extends GetView<AnalyticsController> {
     ).animate().fadeIn(delay: 200.ms);
   }
 
-  Widget _buildPeriodChip(String period) {
+  Widget _buildPeriodChip(String period, bool isDark) {
     return Obx(() {
       final isSelected = controller.selectedPeriod.value == period;
       return GestureDetector(
@@ -99,20 +148,32 @@ class AnalyticsView extends GetView<AnalyticsController> {
           decoration: NeoBrutalismTheme.neoBox(
             color:
                 isSelected
-                    ? NeoBrutalismTheme.accentPink
-                    : NeoBrutalismTheme.primaryWhite,
+                    ? _getThemedColor(NeoBrutalismTheme.accentPink, isDark)
+                    : (isDark
+                        ? NeoBrutalismTheme.darkBackground
+                        : NeoBrutalismTheme.primaryWhite),
             offset: isSelected ? 2 : 5,
+            borderColor: NeoBrutalismTheme.primaryBlack,
           ),
           child: Text(
             period.toUpperCase(),
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+              color:
+                  isSelected
+                      ? NeoBrutalismTheme.primaryBlack
+                      : (isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack),
+            ),
           ),
         ),
       );
     });
   }
 
-  Widget _buildTotalStats() {
+  Widget _buildTotalStats(bool isDark) {
     return Obx(
       () => Row(
         children: [
@@ -120,8 +181,9 @@ class AnalyticsView extends GetView<AnalyticsController> {
             child: _buildStatCard(
               'TOTAL SPENT',
               '\$${controller.totalSpent.value.toStringAsFixed(2)}',
-              NeoBrutalismTheme.accentOrange,
+              _getThemedColor(NeoBrutalismTheme.accentOrange, isDark),
               Icons.payments,
+              isDark,
             ),
           ),
           const SizedBox(width: 16),
@@ -129,8 +191,9 @@ class AnalyticsView extends GetView<AnalyticsController> {
             child: _buildStatCard(
               'AVG DAILY',
               '\$${controller.avgDailySpent.value.toStringAsFixed(2)}',
-              NeoBrutalismTheme.accentGreen,
+              _getThemedColor(NeoBrutalismTheme.accentGreen, isDark),
               Icons.today,
+              isDark,
             ),
           ),
         ],
@@ -143,21 +206,24 @@ class AnalyticsView extends GetView<AnalyticsController> {
     String value,
     Color color,
     IconData icon,
+    bool isDark,
   ) {
     return NeoCard(
       color: color,
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(icon, size: 24),
+              Icon(icon, size: 24, color: NeoBrutalismTheme.primaryBlack),
               Text(
                 label,
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w900,
+                  color: NeoBrutalismTheme.primaryBlack,
                 ),
               ),
             ],
@@ -165,21 +231,37 @@ class AnalyticsView extends GetView<AnalyticsController> {
           const SizedBox(height: 12),
           Text(
             value,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: NeoBrutalismTheme.primaryBlack,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCategoryBreakdown() {
+  Widget _buildCategoryBreakdown(bool isDark) {
     return NeoCard(
+      color:
+          isDark
+              ? NeoBrutalismTheme.darkSurface
+              : NeoBrutalismTheme.primaryWhite,
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'CATEGORY BREAKDOWN',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
+            ),
           ),
           const SizedBox(height: 20),
           Obx(
@@ -193,7 +275,10 @@ class AnalyticsView extends GetView<AnalyticsController> {
                             (data['amount'] as num)
                                 .toDouble(); // Convert num to double
                         final percentage = data['percentage'] as int;
-                        final color = data['color'] as Color;
+                        final color = _getThemedColor(
+                          data['color'] as Color,
+                          isDark,
+                        );
 
                         return PieChartSectionData(
                           value: amount,
@@ -214,13 +299,13 @@ class AnalyticsView extends GetView<AnalyticsController> {
             ),
           ),
           const SizedBox(height: 20),
-          _buildCategoryLegend(),
+          _buildCategoryLegend(isDark),
         ],
       ),
     ).animate().fadeIn(delay: 600.ms);
   }
 
-  Widget _buildCategoryLegend() {
+  Widget _buildCategoryLegend(bool isDark) {
     return Obx(
       () => Column(
         children:
@@ -228,7 +313,7 @@ class AnalyticsView extends GetView<AnalyticsController> {
               final amount =
                   (data['amount'] as num).toDouble(); // Convert num to double
               final name = data['name'] as String;
-              final color = data['color'] as Color;
+              final color = _getThemedColor(data['color'] as Color, isDark);
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
@@ -249,12 +334,24 @@ class AnalyticsView extends GetView<AnalyticsController> {
                     Expanded(
                       child: Text(
                         name,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color:
+                              isDark
+                                  ? NeoBrutalismTheme.darkText
+                                  : NeoBrutalismTheme.primaryBlack,
+                        ),
                       ),
                     ),
                     Text(
                       '\$${amount.toStringAsFixed(2)}',
-                      style: const TextStyle(fontWeight: FontWeight.w900),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        color:
+                            isDark
+                                ? NeoBrutalismTheme.darkText
+                                : NeoBrutalismTheme.primaryBlack,
+                      ),
                     ),
                   ],
                 ),
@@ -264,14 +361,26 @@ class AnalyticsView extends GetView<AnalyticsController> {
     );
   }
 
-  Widget _buildSpendingTrend() {
+  Widget _buildSpendingTrend(bool isDark) {
     return NeoCard(
+      color:
+          isDark
+              ? NeoBrutalismTheme.darkSurface
+              : NeoBrutalismTheme.primaryWhite,
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'SPENDING TREND',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
+            ),
           ),
           const SizedBox(height: 20),
           Obx(
@@ -283,7 +392,10 @@ class AnalyticsView extends GetView<AnalyticsController> {
                     show: true,
                     drawVerticalLine: false,
                     getDrawingHorizontalLine: (value) {
-                      return FlLine(color: Colors.grey[300]!, strokeWidth: 1);
+                      return FlLine(
+                        color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+                        strokeWidth: 1,
+                      );
                     },
                   ),
                   titlesData: FlTitlesData(
@@ -298,9 +410,13 @@ class AnalyticsView extends GetView<AnalyticsController> {
                               index < controller.trendLabels.length) {
                             return Text(
                               controller.trendLabels[index],
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
+                                color:
+                                    isDark
+                                        ? NeoBrutalismTheme.darkText
+                                        : NeoBrutalismTheme.primaryBlack,
                               ),
                             );
                           }
@@ -315,9 +431,13 @@ class AnalyticsView extends GetView<AnalyticsController> {
                         getTitlesWidget: (value, meta) {
                           return Text(
                             '\$${value.toInt()}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
+                              color:
+                                  isDark
+                                      ? NeoBrutalismTheme.darkText
+                                      : NeoBrutalismTheme.primaryBlack,
                             ),
                           );
                         },
@@ -344,7 +464,10 @@ class AnalyticsView extends GetView<AnalyticsController> {
                             return FlSpot(entry.key.toDouble(), entry.value);
                           }).toList(),
                       isCurved: true,
-                      color: NeoBrutalismTheme.accentPink,
+                      color: _getThemedColor(
+                        NeoBrutalismTheme.accentPink,
+                        isDark,
+                      ),
                       barWidth: 4,
                       isStrokeCapRound: true,
                       dotData: FlDotData(
@@ -352,7 +475,10 @@ class AnalyticsView extends GetView<AnalyticsController> {
                         getDotPainter: (spot, percent, barData, index) {
                           return FlDotCirclePainter(
                             radius: 6,
-                            color: NeoBrutalismTheme.accentPink,
+                            color: _getThemedColor(
+                              NeoBrutalismTheme.accentPink,
+                              isDark,
+                            ),
                             strokeWidth: 2,
                             strokeColor: NeoBrutalismTheme.primaryBlack,
                           );
@@ -360,7 +486,10 @@ class AnalyticsView extends GetView<AnalyticsController> {
                       ),
                       belowBarData: BarAreaData(
                         show: true,
-                        color: NeoBrutalismTheme.accentPink.withOpacity(0.2),
+                        color: _getThemedColor(
+                          NeoBrutalismTheme.accentPink,
+                          isDark,
+                        ).withOpacity(0.2),
                       ),
                     ),
                   ],
@@ -373,14 +502,26 @@ class AnalyticsView extends GetView<AnalyticsController> {
     ).animate().fadeIn(delay: 800.ms);
   }
 
-  Widget _buildTopExpenses() {
+  Widget _buildTopExpenses(bool isDark) {
     return NeoCard(
+      color:
+          isDark
+              ? NeoBrutalismTheme.darkSurface
+              : NeoBrutalismTheme.primaryWhite,
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'TOP EXPENSES',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
+            ),
           ),
           const SizedBox(height: 16),
           Obx(
@@ -397,13 +538,15 @@ class AnalyticsView extends GetView<AnalyticsController> {
                             width: 40,
                             height: 40,
                             decoration: NeoBrutalismTheme.neoBox(
-                              color: _getRankColor(index),
+                              color: _getRankColor(index, isDark),
+                              borderColor: NeoBrutalismTheme.primaryBlack,
                             ),
                             child: Center(
                               child: Text(
                                 '#${index + 1}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w900,
+                                  color: _getRankTextColor(index, isDark),
                                 ),
                               ),
                             ),
@@ -415,15 +558,22 @@ class AnalyticsView extends GetView<AnalyticsController> {
                               children: [
                                 Text(
                                   expense.title,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.bold,
+                                    color:
+                                        isDark
+                                            ? NeoBrutalismTheme.darkText
+                                            : NeoBrutalismTheme.primaryBlack,
                                   ),
                                 ),
                                 Text(
                                   '${expense.date.day}/${expense.date.month}',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.grey[600],
+                                    color:
+                                        isDark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600],
                                   ),
                                 ),
                               ],
@@ -431,9 +581,13 @@ class AnalyticsView extends GetView<AnalyticsController> {
                           ),
                           Text(
                             '\$${expense.amount.toStringAsFixed(2)}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w900,
+                              color:
+                                  isDark
+                                      ? NeoBrutalismTheme.darkText
+                                      : NeoBrutalismTheme.primaryBlack,
                             ),
                           ),
                         ],
@@ -447,33 +601,50 @@ class AnalyticsView extends GetView<AnalyticsController> {
     ).animate().fadeIn(delay: 1000.ms);
   }
 
-  Color _getRankColor(int index) {
+  Color _getRankColor(int index, bool isDark) {
     switch (index) {
       case 0:
-        return NeoBrutalismTheme.accentYellow;
+        return _getThemedColor(NeoBrutalismTheme.accentYellow, isDark);
       case 1:
-        return NeoBrutalismTheme.accentBlue;
+        return _getThemedColor(NeoBrutalismTheme.accentBlue, isDark);
       case 2:
-        return NeoBrutalismTheme.accentGreen;
+        return _getThemedColor(NeoBrutalismTheme.accentGreen, isDark);
       default:
-        return NeoBrutalismTheme.primaryWhite;
+        return isDark
+            ? NeoBrutalismTheme.darkBackground
+            : NeoBrutalismTheme.primaryWhite;
     }
   }
 
-  Widget _buildExportSection() {
+  Color _getRankTextColor(int index, bool isDark) {
+    if (index < 3) {
+      return NeoBrutalismTheme.primaryBlack;
+    }
+    return isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack;
+  }
+
+  Widget _buildExportSection(bool isDark) {
     return NeoCard(
-      color: NeoBrutalismTheme.accentPurple,
+      color: _getThemedColor(NeoBrutalismTheme.accentPurple, isDark),
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'EXPORT REPORT',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: NeoBrutalismTheme.primaryBlack,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
             'Generate a beautiful PDF report with all your analytics',
-            style: TextStyle(fontSize: 14),
+            style: TextStyle(
+              fontSize: 14,
+              color: NeoBrutalismTheme.primaryBlack,
+            ),
           ),
           const SizedBox(height: 20),
           NeoButton(
@@ -482,20 +653,33 @@ class AnalyticsView extends GetView<AnalyticsController> {
               Get.dialog(
                 Center(
                   child: Container(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(16),
                     decoration: NeoBrutalismTheme.neoBoxRounded(
-                      color: NeoBrutalismTheme.primaryWhite,
+                      color:
+                          isDark
+                              ? NeoBrutalismTheme.darkSurface
+                              : NeoBrutalismTheme.primaryWhite,
+                      borderColor: NeoBrutalismTheme.primaryBlack,
                     ),
-                    child: const Column(
+                    child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         CircularProgressIndicator(
-                          color: NeoBrutalismTheme.primaryBlack,
+                          color:
+                              isDark
+                                  ? NeoBrutalismTheme.darkText
+                                  : NeoBrutalismTheme.primaryBlack,
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         Text(
                           'GENERATING PDF...',
-                          style: TextStyle(fontWeight: FontWeight.w900),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color:
+                                isDark
+                                    ? NeoBrutalismTheme.darkText
+                                    : NeoBrutalismTheme.primaryBlack,
+                          ),
                         ),
                       ],
                     ),
@@ -514,7 +698,10 @@ class AnalyticsView extends GetView<AnalyticsController> {
               Get.snackbar(
                 'Success',
                 'PDF report generated successfully!',
-                backgroundColor: NeoBrutalismTheme.accentGreen,
+                backgroundColor: _getThemedColor(
+                  NeoBrutalismTheme.accentGreen,
+                  isDark,
+                ),
                 colorText: NeoBrutalismTheme.primaryBlack,
                 borderWidth: 3,
                 borderColor: NeoBrutalismTheme.primaryBlack,

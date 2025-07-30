@@ -17,6 +17,27 @@ class NeoBrutalismTheme {
   static const double borderWidth = 3.0;
   static const double shadowOffset = 5.0;
 
+  // Helper method to get muted colors for dark theme
+  static Color getThemedColor(Color color, bool isDark) {
+    if (!isDark) return color;
+
+    // Return slightly muted versions of colors for dark theme
+    if (color == accentYellow) {
+      return Color(0xFFE6B800); // Slightly darker yellow
+    } else if (color == accentPink) {
+      return Color(0xFFE667A0); // Slightly darker pink
+    } else if (color == accentBlue) {
+      return Color(0xFF4D94FF); // Slightly darker blue
+    } else if (color == accentGreen) {
+      return Color(0xFF00CC66); // Slightly darker green
+    } else if (color == accentOrange) {
+      return Color(0xFFFF8533); // Slightly darker orange
+    } else if (color == accentPurple) {
+      return Color(0xFF9966FF); // Slightly darker purple
+    }
+    return color;
+  }
+
   static BoxDecoration neoBox({
     Color? color,
     Color? borderColor,
@@ -24,7 +45,7 @@ class NeoBrutalismTheme {
     bool isDark = false,
   }) {
     final defaultColor = isDark ? darkSurface : primaryWhite;
-    final defaultBorderColor = isDark ? primaryWhite : primaryBlack;
+    final defaultBorderColor = primaryBlack;
 
     return BoxDecoration(
       color: color ?? defaultColor,
@@ -49,7 +70,7 @@ class NeoBrutalismTheme {
     bool isDark = false,
   }) {
     final defaultColor = isDark ? darkSurface : primaryWhite;
-    final defaultBorderColor = isDark ? primaryWhite : primaryBlack;
+    final defaultBorderColor = primaryBlack;
 
     return BoxDecoration(
       color: color ?? defaultColor,

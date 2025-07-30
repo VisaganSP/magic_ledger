@@ -20,21 +20,25 @@ class HomeView extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     final categoryController = Get.find<CategoryController>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: NeoBrutalismTheme.primaryWhite,
+      backgroundColor:
+          isDark
+              ? NeoBrutalismTheme.darkBackground
+              : NeoBrutalismTheme.primaryWhite,
       body: Stack(
         children: [
           Column(
             children: [
-              _buildHeader(),
-              _buildQuickStats(),
+              _buildHeader(isDark),
+              _buildQuickStats(isDark),
               Expanded(
                 child: Obx(
                   () => IndexedStack(
                     index: controller.selectedIndex.value,
                     children: [
-                      _buildDashboard(categoryController),
+                      _buildDashboard(categoryController, isDark),
                       ExpenseView(),
                       TodoView(),
                       AnalyticsView(),
@@ -47,13 +51,39 @@ class HomeView extends GetView<HomeController> {
             ],
           ),
           // Floating bottom navigation
-          Positioned(left: 0, right: 0, bottom: 0, child: _buildBottomNav()),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _buildBottomNav(isDark),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  // Helper method to get muted colors for dark theme
+  Color _getThemedColor(Color color, bool isDark) {
+    if (!isDark) return color;
+
+    // Return slightly muted versions of colors for dark theme
+    if (color == NeoBrutalismTheme.accentYellow) {
+      return Color(0xFFE6B800); // Slightly darker yellow
+    } else if (color == NeoBrutalismTheme.accentPink) {
+      return Color(0xFFE667A0); // Slightly darker pink
+    } else if (color == NeoBrutalismTheme.accentBlue) {
+      return Color(0xFF4D94FF); // Slightly darker blue
+    } else if (color == NeoBrutalismTheme.accentGreen) {
+      return Color(0xFF00CC66); // Slightly darker green
+    } else if (color == NeoBrutalismTheme.accentOrange) {
+      return Color(0xFFFF8533); // Slightly darker orange
+    } else if (color == NeoBrutalismTheme.accentPurple) {
+      return Color(0xFF9966FF); // Slightly darker purple
+    }
+    return color;
+  }
+
+  Widget _buildHeader(bool isDark) {
     return Container(
       padding: EdgeInsets.only(
         top: MediaQuery.of(Get.context!).padding.top + 20,
@@ -61,8 +91,11 @@ class HomeView extends GetView<HomeController> {
         right: 20,
         bottom: 20,
       ),
-      decoration: const BoxDecoration(
-        color: NeoBrutalismTheme.accentYellow,
+      decoration: BoxDecoration(
+        color:
+            isDark
+                ? NeoBrutalismTheme.darkSurface
+                : NeoBrutalismTheme.accentYellow,
         border: Border(
           bottom: BorderSide(
             color: NeoBrutalismTheme.primaryBlack,
@@ -77,17 +110,28 @@ class HomeView extends GetView<HomeController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'MAGIC LEDGER',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -1,
+                    color:
+                        isDark
+                            ? NeoBrutalismTheme.darkText
+                            : NeoBrutalismTheme.primaryBlack,
                   ),
                 ),
-                const Text(
+                Text(
                   'Track. Save. Achieve.',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color:
+                        isDark
+                            ? Colors.grey[400]
+                            : NeoBrutalismTheme.primaryBlack,
+                  ),
                 ),
               ],
             ),
@@ -97,19 +141,31 @@ class HomeView extends GetView<HomeController> {
             children: [
               Container(
                 decoration: NeoBrutalismTheme.neoBox(
-                  color: NeoBrutalismTheme.accentGreen,
+                  color: _getThemedColor(NeoBrutalismTheme.accentGreen, isDark),
                   offset: 3,
+                  borderColor: NeoBrutalismTheme.primaryBlack,
                 ),
                 child: IconButton(
                   onPressed: () => Get.toNamed('/add-income'),
-                  icon: const Icon(Icons.add_circle_outline, size: 24),
+                  icon: Icon(
+                    Icons.add_circle_outline,
+                    size: 24,
+                    color: NeoBrutalismTheme.primaryBlack,
+                  ),
                   tooltip: 'Add Income',
                 ),
               ),
               const SizedBox(width: 12),
               IconButton(
                 onPressed: () => Get.toNamed('/settings'),
-                icon: const Icon(Icons.settings, size: 28),
+                icon: Icon(
+                  Icons.settings,
+                  size: 28,
+                  color:
+                      isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack,
+                ),
               ),
             ],
           ),
@@ -118,7 +174,7 @@ class HomeView extends GetView<HomeController> {
     ).animate().fadeIn(duration: 500.ms).slideY(begin: -0.2, end: 0);
   }
 
-  Widget _buildQuickStats() {
+  Widget _buildQuickStats(bool isDark) {
     return Container(
       height: 110,
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -130,15 +186,17 @@ class HomeView extends GetView<HomeController> {
             () => _buildStatCard(
               'THIS MONTH',
               _formatCurrency(controller.totalExpensesThisMonth.value),
-              NeoBrutalismTheme.accentPink,
+              _getThemedColor(NeoBrutalismTheme.accentPink, isDark),
               Icons.attach_money,
+              isDark: isDark,
               onTap:
                   () => _showStatDialog(
                     'Monthly Expenses',
                     '₹${controller.totalExpensesThisMonth.value.toStringAsFixed(2)}',
                     'Total amount spent this month',
-                    NeoBrutalismTheme.accentPink,
+                    _getThemedColor(NeoBrutalismTheme.accentPink, isDark),
                     Icons.attach_money,
+                    isDark,
                   ),
             ),
           ),
@@ -147,15 +205,17 @@ class HomeView extends GetView<HomeController> {
             () => _buildStatCard(
               'PENDING',
               '${controller.pendingTodos.value}',
-              NeoBrutalismTheme.accentBlue,
+              _getThemedColor(NeoBrutalismTheme.accentBlue, isDark),
               Icons.checklist,
+              isDark: isDark,
               onTap:
                   () => _showStatDialog(
                     'Pending Tasks',
                     '${controller.pendingTodos.value} tasks',
                     'Number of incomplete todos',
-                    NeoBrutalismTheme.accentBlue,
+                    _getThemedColor(NeoBrutalismTheme.accentBlue, isDark),
                     Icons.checklist,
+                    isDark,
                   ),
             ),
           ),
@@ -164,15 +224,17 @@ class HomeView extends GetView<HomeController> {
             () => _buildStatCard(
               'SAVED',
               '${controller.savingsPercentage.value.toStringAsFixed(1)}%',
-              NeoBrutalismTheme.accentGreen,
+              _getThemedColor(NeoBrutalismTheme.accentGreen, isDark),
               Icons.savings,
+              isDark: isDark,
               onTap:
                   () => _showStatDialog(
                     'Savings Rate',
                     '${controller.savingsPercentage.value.toStringAsFixed(1)}%',
                     'Percentage of income saved this month\nIncome: ₹${controller.totalIncomeThisMonth.value.toStringAsFixed(2)}\nExpenses: ₹${controller.totalExpensesThisMonth.value.toStringAsFixed(2)}',
-                    NeoBrutalismTheme.accentGreen,
+                    _getThemedColor(NeoBrutalismTheme.accentGreen, isDark),
                     Icons.savings,
+                    isDark,
                   ),
             ),
           ),
@@ -181,15 +243,17 @@ class HomeView extends GetView<HomeController> {
             () => _buildStatCard(
               'INCOME',
               _formatCurrency(controller.totalIncomeThisMonth.value),
-              NeoBrutalismTheme.accentPurple,
+              _getThemedColor(NeoBrutalismTheme.accentPurple, isDark),
               Icons.account_balance_wallet,
+              isDark: isDark,
               onTap:
                   () => _showStatDialog(
                     'Monthly Income',
                     '₹${controller.totalIncomeThisMonth.value.toStringAsFixed(2)}',
                     'Total income received this month',
-                    NeoBrutalismTheme.accentPurple,
+                    _getThemedColor(NeoBrutalismTheme.accentPurple, isDark),
                     Icons.account_balance_wallet,
+                    isDark,
                   ),
             ),
           ),
@@ -218,6 +282,7 @@ class HomeView extends GetView<HomeController> {
     Color color,
     IconData icon, {
     VoidCallback? onTap,
+    required bool isDark,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -225,6 +290,7 @@ class HomeView extends GetView<HomeController> {
         width: 150,
         color: color,
         padding: const EdgeInsets.all(12),
+        borderColor: NeoBrutalismTheme.primaryBlack,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -233,7 +299,7 @@ class HomeView extends GetView<HomeController> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(icon, size: 20),
+                Icon(icon, size: 20, color: NeoBrutalismTheme.primaryBlack),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
@@ -242,6 +308,7 @@ class HomeView extends GetView<HomeController> {
                       fontSize: 10,
                       fontWeight: FontWeight.w900,
                       height: 1.1,
+                      color: NeoBrutalismTheme.primaryBlack,
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 2,
@@ -262,6 +329,7 @@ class HomeView extends GetView<HomeController> {
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
+                        color: NeoBrutalismTheme.primaryBlack,
                       ),
                       maxLines: 1,
                     ),
@@ -289,15 +357,13 @@ class HomeView extends GetView<HomeController> {
     String description,
     Color color,
     IconData icon,
+    bool isDark,
   ) {
     Get.dialog(
       Dialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(
-            color: NeoBrutalismTheme.primaryBlack,
-            width: 3,
-          ),
+          side: BorderSide(color: NeoBrutalismTheme.primaryBlack, width: 3),
         ),
         child: Container(
           padding: const EdgeInsets.all(24),
@@ -358,26 +424,33 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  Widget _buildDashboard(CategoryController categoryController) {
+  Widget _buildDashboard(CategoryController categoryController, bool isDark) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _buildQuickActions(),
+        _buildQuickActions(isDark),
         const SizedBox(height: 24),
-        _buildRecentTransactions(categoryController),
+        _buildRecentTransactions(categoryController, isDark),
         const SizedBox(height: 24),
-        _buildUpcomingTodos(),
+        _buildUpcomingTodos(isDark),
       ],
     );
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickActions(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'QUICK ACTIONS',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            color:
+                isDark
+                    ? NeoBrutalismTheme.darkText
+                    : NeoBrutalismTheme.primaryBlack,
+          ),
         ),
         const SizedBox(height: 16),
         Row(
@@ -386,7 +459,7 @@ class HomeView extends GetView<HomeController> {
               child: NeoButton(
                 text: 'ADD EXPENSE',
                 onPressed: () => Get.toNamed('/add-expense'),
-                color: NeoBrutalismTheme.accentOrange,
+                color: _getThemedColor(NeoBrutalismTheme.accentOrange, isDark),
                 icon: Icons.remove_circle,
               ),
             ),
@@ -395,7 +468,7 @@ class HomeView extends GetView<HomeController> {
               child: NeoButton(
                 text: 'ADD TODO',
                 onPressed: () => Get.toNamed('/add-todo'),
-                color: NeoBrutalismTheme.accentPurple,
+                color: _getThemedColor(NeoBrutalismTheme.accentPurple, isDark),
                 icon: Icons.task_alt,
               ),
             ),
@@ -405,16 +478,26 @@ class HomeView extends GetView<HomeController> {
     ).animate().fadeIn(delay: 400.ms);
   }
 
-  Widget _buildRecentTransactions(CategoryController categoryController) {
+  Widget _buildRecentTransactions(
+    CategoryController categoryController,
+    bool isDark,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'RECENT TRANSACTIONS',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color:
+                    isDark
+                        ? NeoBrutalismTheme.darkText
+                        : NeoBrutalismTheme.primaryBlack,
+              ),
             ),
             PopupMenuButton<String>(
               onSelected: (value) {
@@ -422,7 +505,7 @@ class HomeView extends GetView<HomeController> {
                   controller.changeTab(1);
                 } else if (value == 'income') {
                   // Navigate to income view or show income list
-                  Get.toNamed('/income');
+                  controller.changeTab(1);
                 }
               },
               itemBuilder:
@@ -436,7 +519,7 @@ class HomeView extends GetView<HomeController> {
                       child: Text('View All Income'),
                     ),
                   ],
-              child: const Text(
+              child: Text(
                 'SEE ALL',
                 style: TextStyle(
                   color: Colors.blue,
@@ -483,6 +566,11 @@ class HomeView extends GetView<HomeController> {
 
           if (displayTransactions.isEmpty) {
             return NeoCard(
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkSurface
+                      : NeoBrutalismTheme.primaryWhite,
+              borderColor: NeoBrutalismTheme.primaryBlack,
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(32),
@@ -497,7 +585,7 @@ class HomeView extends GetView<HomeController> {
                       Text(
                         'No transactions yet',
                         style: TextStyle(
-                          color: Colors.grey[600],
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -505,7 +593,10 @@ class HomeView extends GetView<HomeController> {
                       const SizedBox(height: 8),
                       Text(
                         'Add your first expense or income to get started',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                        style: TextStyle(
+                          color: isDark ? Colors.grey[600] : Colors.grey[500],
+                          fontSize: 14,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -526,8 +617,9 @@ class HomeView extends GetView<HomeController> {
                                 ? _buildExpenseItem(
                                   transaction['data'],
                                   categoryController,
+                                  isDark,
                                 )
-                                : _buildIncomeItem(transaction['data']),
+                                : _buildIncomeItem(transaction['data'], isDark),
                       ),
                     )
                     .toList(),
@@ -540,6 +632,7 @@ class HomeView extends GetView<HomeController> {
   Widget _buildExpenseItem(
     ExpenseModel expense,
     CategoryController categoryController,
+    bool isDark,
   ) {
     final category = categoryController.categories.firstWhere(
       (c) => c.id == expense.categoryId,
@@ -548,12 +641,20 @@ class HomeView extends GetView<HomeController> {
 
     return NeoCard(
       onTap: () => Get.toNamed('/expense-detail', arguments: expense),
+      color:
+          isDark
+              ? NeoBrutalismTheme.darkSurface
+              : NeoBrutalismTheme.primaryWhite,
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Row(
         children: [
           Container(
             width: 48,
             height: 48,
-            decoration: NeoBrutalismTheme.neoBox(color: category.colorValue),
+            decoration: NeoBrutalismTheme.neoBox(
+              color: _getThemedColor(category.colorValue, isDark),
+              borderColor: NeoBrutalismTheme.primaryBlack,
+            ),
             child: Center(
               child: Text(category.icon, style: const TextStyle(fontSize: 24)),
             ),
@@ -588,9 +689,13 @@ class HomeView extends GetView<HomeController> {
                     Expanded(
                       child: Text(
                         expense.title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color:
+                              isDark
+                                  ? NeoBrutalismTheme.darkText
+                                  : NeoBrutalismTheme.primaryBlack,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -606,7 +711,7 @@ class HomeView extends GetView<HomeController> {
                         category.name,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[700],
+                          color: isDark ? Colors.grey[400] : Colors.grey[700],
                           fontWeight: FontWeight.w600,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -614,7 +719,10 @@ class HomeView extends GetView<HomeController> {
                     ),
                     Text(
                       ' • ${expense.date.day}/${expense.date.month}',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.grey[500] : Colors.grey[600],
+                      ),
                     ),
                   ],
                 ),
@@ -635,16 +743,22 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  Widget _buildIncomeItem(IncomeModel income) {
+  Widget _buildIncomeItem(IncomeModel income, bool isDark) {
     return NeoCard(
       onTap: () => Get.toNamed('/income-detail', arguments: income),
+      color:
+          isDark
+              ? NeoBrutalismTheme.darkSurface
+              : NeoBrutalismTheme.primaryWhite,
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Row(
         children: [
           Container(
             width: 48,
             height: 48,
             decoration: NeoBrutalismTheme.neoBox(
-              color: NeoBrutalismTheme.accentGreen,
+              color: _getThemedColor(NeoBrutalismTheme.accentGreen, isDark),
+              borderColor: NeoBrutalismTheme.primaryBlack,
             ),
             child: const Center(
               child: Icon(
@@ -684,9 +798,13 @@ class HomeView extends GetView<HomeController> {
                     Expanded(
                       child: Text(
                         income.title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color:
+                              isDark
+                                  ? NeoBrutalismTheme.darkText
+                                  : NeoBrutalismTheme.primaryBlack,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -702,7 +820,7 @@ class HomeView extends GetView<HomeController> {
                         income.source,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[700],
+                          color: isDark ? Colors.grey[400] : Colors.grey[700],
                           fontWeight: FontWeight.w600,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -710,7 +828,10 @@ class HomeView extends GetView<HomeController> {
                     ),
                     Text(
                       ' • ${income.date.day}/${income.date.month}',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.grey[500] : Colors.grey[600],
+                      ),
                     ),
                   ],
                 ),
@@ -731,16 +852,23 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  Widget _buildUpcomingTodos() {
+  Widget _buildUpcomingTodos(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'UPCOMING TODOS',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color:
+                    isDark
+                        ? NeoBrutalismTheme.darkText
+                        : NeoBrutalismTheme.primaryBlack,
+              ),
             ),
             TextButton(
               onPressed: () => controller.changeTab(2),
@@ -758,6 +886,11 @@ class HomeView extends GetView<HomeController> {
 
           if (upcomingTodos.isEmpty) {
             return NeoCard(
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkSurface
+                      : NeoBrutalismTheme.primaryWhite,
+              borderColor: NeoBrutalismTheme.primaryBlack,
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(32),
@@ -768,7 +901,7 @@ class HomeView extends GetView<HomeController> {
                       Text(
                         'No todos yet',
                         style: TextStyle(
-                          color: Colors.grey[600],
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -776,7 +909,10 @@ class HomeView extends GetView<HomeController> {
                       const SizedBox(height: 8),
                       Text(
                         'Add your first todo to stay organized',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                        style: TextStyle(
+                          color: isDark ? Colors.grey[600] : Colors.grey[500],
+                          fontSize: 14,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -792,7 +928,7 @@ class HomeView extends GetView<HomeController> {
                     .map(
                       (todo) => Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: _buildTodoItem(todo),
+                        child: _buildTodoItem(todo, isDark),
                       ),
                     )
                     .toList(),
@@ -802,12 +938,13 @@ class HomeView extends GetView<HomeController> {
     ).animate().fadeIn(delay: 800.ms);
   }
 
-  Widget _buildTodoItem(TodoModel todo) {
-    final bgColor = _getPriorityColor(todo.priority);
+  Widget _buildTodoItem(TodoModel todo, bool isDark) {
+    final bgColor = _getThemedColor(_getPriorityColor(todo.priority), isDark);
     final textColor = _getContrastTextColor(bgColor);
 
     return NeoCard(
       color: bgColor,
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Row(
         children: [
           Checkbox(
@@ -900,7 +1037,7 @@ class HomeView extends GetView<HomeController> {
     }
   }
 
-  Widget _buildBottomNav() {
+  Widget _buildBottomNav(bool isDark) {
     final screenHeight = MediaQuery.of(Get.context!).size.height;
     final navbarHeight = screenHeight * 0.09; // 9% of screen height
 
@@ -920,7 +1057,10 @@ class HomeView extends GetView<HomeController> {
           ),
           child: Container(
             decoration: BoxDecoration(
-              color: NeoBrutalismTheme.primaryWhite,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkSurface
+                      : NeoBrutalismTheme.primaryWhite,
               border: Border.all(
                 color: NeoBrutalismTheme.primaryBlack,
                 width: 3,
@@ -946,7 +1086,11 @@ class HomeView extends GetView<HomeController> {
                           Icons.home_rounded,
                           'HOME',
                           0,
-                          NeoBrutalismTheme.accentPurple,
+                          _getThemedColor(
+                            NeoBrutalismTheme.accentPurple,
+                            isDark,
+                          ),
+                          isDark,
                         ),
                       ),
                       Flexible(
@@ -954,7 +1098,8 @@ class HomeView extends GetView<HomeController> {
                           Icons.receipt_long_rounded,
                           'EXPENSES',
                           1,
-                          NeoBrutalismTheme.accentPink,
+                          _getThemedColor(NeoBrutalismTheme.accentPink, isDark),
+                          isDark,
                         ),
                       ),
                       Flexible(
@@ -962,7 +1107,8 @@ class HomeView extends GetView<HomeController> {
                           Icons.check_box_rounded,
                           'TODOS',
                           2,
-                          NeoBrutalismTheme.accentBlue,
+                          _getThemedColor(NeoBrutalismTheme.accentBlue, isDark),
+                          isDark,
                         ),
                       ),
                       Flexible(
@@ -970,7 +1116,11 @@ class HomeView extends GetView<HomeController> {
                           Icons.bar_chart_rounded,
                           'STATS',
                           3,
-                          NeoBrutalismTheme.accentYellow,
+                          _getThemedColor(
+                            NeoBrutalismTheme.accentYellow,
+                            isDark,
+                          ),
+                          isDark,
                         ),
                       ),
                     ],
@@ -990,6 +1140,7 @@ class HomeView extends GetView<HomeController> {
     String label,
     int index,
     Color activeColor,
+    bool isDark,
   ) {
     final isSelected = controller.selectedIndex.value == index;
     final screenHeight = MediaQuery.of(Get.context!).size.height;
@@ -1045,7 +1196,7 @@ class HomeView extends GetView<HomeController> {
                   color:
                       isSelected
                           ? NeoBrutalismTheme.primaryBlack
-                          : Colors.grey[600],
+                          : (isDark ? Colors.grey[400] : Colors.grey[600]),
                 ),
               ),
               SizedBox(height: screenHeight * 0.004), // Reduced spacing
@@ -1059,8 +1210,10 @@ class HomeView extends GetView<HomeController> {
                   fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
                   color:
                       isSelected
-                          ? NeoBrutalismTheme.primaryBlack
-                          : Colors.grey[600],
+                          ? (isDark
+                              ? NeoBrutalismTheme.darkText
+                              : NeoBrutalismTheme.primaryBlack)
+                          : (isDark ? Colors.grey[400] : Colors.grey[600]),
                 ),
               ),
             ],

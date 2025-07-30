@@ -29,6 +29,27 @@ class _AddTodoViewState extends State<AddTodoView> {
   TimeOfDay _reminderTime = TimeOfDay.now();
   final List<String> _tags = [];
 
+  // Helper method to get muted colors for dark theme
+  Color _getThemedColor(Color color, bool isDark) {
+    if (!isDark) return color;
+
+    // Return slightly muted versions of colors for dark theme
+    if (color == NeoBrutalismTheme.accentYellow) {
+      return Color(0xFFE6B800); // Slightly darker yellow
+    } else if (color == NeoBrutalismTheme.accentPink) {
+      return Color(0xFFE667A0); // Slightly darker pink
+    } else if (color == NeoBrutalismTheme.accentBlue) {
+      return Color(0xFF4D94FF); // Slightly darker blue
+    } else if (color == NeoBrutalismTheme.accentGreen) {
+      return Color(0xFF00CC66); // Slightly darker green
+    } else if (color == NeoBrutalismTheme.accentOrange) {
+      return Color(0xFFFF8533); // Slightly darker orange
+    } else if (color == NeoBrutalismTheme.accentPurple) {
+      return Color(0xFF9966FF); // Slightly darker purple
+    }
+    return color;
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -36,7 +57,7 @@ class _AddTodoViewState extends State<AddTodoView> {
     super.dispose();
   }
 
-  Future<void> _selectDueDate() async {
+  Future<void> _selectDueDate(bool isDark) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _dueDate ?? DateTime.now(),
@@ -45,11 +66,17 @@ class _AddTodoViewState extends State<AddTodoView> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: ColorScheme.light(
               primary: NeoBrutalismTheme.primaryBlack,
               onPrimary: NeoBrutalismTheme.primaryWhite,
-              surface: NeoBrutalismTheme.primaryWhite,
-              onSurface: NeoBrutalismTheme.primaryBlack,
+              surface:
+                  isDark
+                      ? NeoBrutalismTheme.darkSurface
+                      : NeoBrutalismTheme.primaryWhite,
+              onSurface:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
             ),
           ),
           child: child!,
@@ -64,18 +91,24 @@ class _AddTodoViewState extends State<AddTodoView> {
     }
   }
 
-  Future<void> _selectReminderTime() async {
+  Future<void> _selectReminderTime(bool isDark) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: _reminderTime,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: ColorScheme.light(
               primary: NeoBrutalismTheme.primaryBlack,
               onPrimary: NeoBrutalismTheme.primaryWhite,
-              surface: NeoBrutalismTheme.primaryWhite,
-              onSurface: NeoBrutalismTheme.primaryBlack,
+              surface:
+                  isDark
+                      ? NeoBrutalismTheme.darkSurface
+                      : NeoBrutalismTheme.primaryWhite,
+              onSurface:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
             ),
           ),
           child: child!,
@@ -133,56 +166,70 @@ class _AddTodoViewState extends State<AddTodoView> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: NeoBrutalismTheme.primaryWhite,
+      backgroundColor:
+          isDark
+              ? NeoBrutalismTheme.darkBackground
+              : NeoBrutalismTheme.primaryWhite,
       appBar: AppBar(
-        title: const Text('ADD TODO'),
-        backgroundColor: NeoBrutalismTheme.accentPurple,
+        title: const Text(
+          'ADD TODO',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: NeoBrutalismTheme.primaryBlack,
+          ),
+        ),
+        backgroundColor: _getThemedColor(
+          NeoBrutalismTheme.accentPurple,
+          isDark,
+        ),
+        foregroundColor: NeoBrutalismTheme.primaryBlack,
+        elevation: 0,
       ),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _buildTitleField().animate().fadeIn().slideY(begin: 0.2, end: 0),
+            _buildTitleField(
+              isDark,
+            ).animate().fadeIn().slideY(begin: 0.2, end: 0),
             const SizedBox(height: 16),
-            _buildDescriptionField()
-                .animate()
-                .fadeIn(delay: 100.ms)
-                .slideY(begin: 0.2, end: 0),
+            _buildDescriptionField(
+              isDark,
+            ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.2, end: 0),
             const SizedBox(height: 16),
-            _buildPrioritySelector()
-                .animate()
-                .fadeIn(delay: 200.ms)
-                .slideY(begin: 0.2, end: 0),
+            _buildPrioritySelector(
+              isDark,
+            ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
             const SizedBox(height: 16),
-            _buildDueDateSelector()
-                .animate()
-                .fadeIn(delay: 300.ms)
-                .slideY(begin: 0.2, end: 0),
+            _buildDueDateSelector(
+              isDark,
+            ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2, end: 0),
             const SizedBox(height: 16),
-            _buildReminderSection()
-                .animate()
-                .fadeIn(delay: 400.ms)
-                .slideY(begin: 0.2, end: 0),
+            _buildReminderSection(
+              isDark,
+            ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0),
             const SizedBox(height: 16),
-            _buildTagsSection()
-                .animate()
-                .fadeIn(delay: 500.ms)
-                .slideY(begin: 0.2, end: 0),
+            _buildTagsSection(
+              isDark,
+            ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2, end: 0),
             const SizedBox(height: 32),
-            _buildSaveButton().animate().fadeIn(delay: 600.ms).scale(),
+            _buildSaveButton(isDark).animate().fadeIn(delay: 600.ms).scale(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTitleField() {
+  Widget _buildTitleField(bool isDark) {
     return NeoInput(
       controller: _titleController,
       label: 'TODO TITLE',
       hint: 'What needs to be done?',
+      isDark: isDark,
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Please enter a title';
@@ -192,22 +239,30 @@ class _AddTodoViewState extends State<AddTodoView> {
     );
   }
 
-  Widget _buildDescriptionField() {
+  Widget _buildDescriptionField(bool isDark) {
     return NeoInput(
       controller: _descriptionController,
       label: 'DESCRIPTION (OPTIONAL)',
       hint: 'Add more details...',
       maxLines: 3,
+      isDark: isDark,
     );
   }
 
-  Widget _buildPrioritySelector() {
+  Widget _buildPrioritySelector(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'PRIORITY',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w900,
+            color:
+                isDark
+                    ? NeoBrutalismTheme.darkText
+                    : NeoBrutalismTheme.primaryBlack,
+          ),
         ),
         const SizedBox(height: 8),
         Row(
@@ -217,6 +272,7 @@ class _AddTodoViewState extends State<AddTodoView> {
                 1,
                 'LOW',
                 NeoBrutalismTheme.accentGreen,
+                isDark,
               ),
             ),
             const SizedBox(width: 8),
@@ -225,6 +281,7 @@ class _AddTodoViewState extends State<AddTodoView> {
                 2,
                 'MEDIUM',
                 NeoBrutalismTheme.accentYellow,
+                isDark,
               ),
             ),
             const SizedBox(width: 8),
@@ -233,6 +290,7 @@ class _AddTodoViewState extends State<AddTodoView> {
                 3,
                 'HIGH',
                 NeoBrutalismTheme.accentPink,
+                isDark,
               ),
             ),
           ],
@@ -241,7 +299,12 @@ class _AddTodoViewState extends State<AddTodoView> {
     );
   }
 
-  Widget _buildPriorityOption(int value, String label, Color color) {
+  Widget _buildPriorityOption(
+    int value,
+    String label,
+    Color color,
+    bool isDark,
+  ) {
     final isSelected = _priority == value;
     return GestureDetector(
       onTap: () {
@@ -253,32 +316,59 @@ class _AddTodoViewState extends State<AddTodoView> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: NeoBrutalismTheme.neoBox(
-          color: isSelected ? color : NeoBrutalismTheme.primaryWhite,
+          color:
+              isSelected
+                  ? _getThemedColor(color, isDark)
+                  : (isDark
+                      ? NeoBrutalismTheme.darkSurface
+                      : NeoBrutalismTheme.primaryWhite),
           offset: isSelected ? 2 : 5,
+          borderColor: NeoBrutalismTheme.primaryBlack,
         ),
         child: Center(
           child: Text(
             label,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              color:
+                  isSelected
+                      ? NeoBrutalismTheme.primaryBlack
+                      : (isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack),
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildDueDateSelector() {
+  Widget _buildDueDateSelector(bool isDark) {
     return GestureDetector(
-      onTap: _selectDueDate,
+      onTap: () => _selectDueDate(isDark),
       child: NeoCard(
+        color:
+            isDark
+                ? NeoBrutalismTheme.darkSurface
+                : NeoBrutalismTheme.primaryWhite,
+        borderColor: NeoBrutalismTheme.primaryBlack,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'DUE DATE (OPTIONAL)',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color:
+                        isDark
+                            ? NeoBrutalismTheme.darkText
+                            : NeoBrutalismTheme.primaryBlack,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -288,28 +378,51 @@ class _AddTodoViewState extends State<AddTodoView> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: _dueDate != null ? null : Colors.grey[600],
+                    color:
+                        _dueDate != null
+                            ? (isDark
+                                ? NeoBrutalismTheme.darkText
+                                : NeoBrutalismTheme.primaryBlack)
+                            : (isDark ? Colors.grey[500] : Colors.grey[600]),
                   ),
                 ),
               ],
             ),
-            const Icon(Icons.calendar_today),
+            Icon(
+              Icons.calendar_today,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildReminderSection() {
+  Widget _buildReminderSection(bool isDark) {
     return NeoCard(
+      color:
+          isDark
+              ? NeoBrutalismTheme.darkSurface
+              : NeoBrutalismTheme.primaryWhite,
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'SET REMINDER',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  color:
+                      isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack,
+                ),
               ),
               Switch(
                 value: _hasReminder,
@@ -321,29 +434,47 @@ class _AddTodoViewState extends State<AddTodoView> {
                           });
                         }
                         : null,
-                activeColor: NeoBrutalismTheme.primaryBlack,
+                activeColor: _getThemedColor(
+                  NeoBrutalismTheme.accentPurple,
+                  isDark,
+                ),
+                activeTrackColor: _getThemedColor(
+                  NeoBrutalismTheme.accentPurple,
+                  isDark,
+                ).withOpacity(0.5),
+                inactiveThumbColor:
+                    isDark
+                        ? NeoBrutalismTheme.darkText
+                        : NeoBrutalismTheme.primaryBlack,
+                inactiveTrackColor:
+                    isDark ? Colors.grey.shade700 : Colors.grey.shade300,
               ),
             ],
           ),
           if (_hasReminder && _dueDate != null) ...[
             const SizedBox(height: 16),
             GestureDetector(
-              onTap: _selectReminderTime,
+              onTap: () => _selectReminderTime(isDark),
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: NeoBrutalismTheme.neoBox(
-                  color: NeoBrutalismTheme.accentBlue,
+                  color: _getThemedColor(NeoBrutalismTheme.accentBlue, isDark),
+                  borderColor: NeoBrutalismTheme.primaryBlack,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.access_time),
+                    const Icon(
+                      Icons.access_time,
+                      color: NeoBrutalismTheme.primaryBlack,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       _reminderTime.format(context),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
+                        color: NeoBrutalismTheme.primaryBlack,
                       ),
                     ),
                   ],
@@ -356,13 +487,20 @@ class _AddTodoViewState extends State<AddTodoView> {
     );
   }
 
-  Widget _buildTagsSection() {
+  Widget _buildTagsSection(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'TAGS (OPTIONAL)',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w900,
+            color:
+                isDark
+                    ? NeoBrutalismTheme.darkText
+                    : NeoBrutalismTheme.primaryBlack,
+          ),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -371,13 +509,22 @@ class _AddTodoViewState extends State<AddTodoView> {
           children: [
             ..._tags.map(
               (tag) => Chip(
-                label: Text(tag),
+                label: Text(
+                  tag,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: NeoBrutalismTheme.primaryBlack,
+                  ),
+                ),
                 onDeleted: () {
                   setState(() {
                     _tags.remove(tag);
                   });
                 },
-                backgroundColor: NeoBrutalismTheme.accentYellow,
+                backgroundColor: _getThemedColor(
+                  NeoBrutalismTheme.accentYellow,
+                  isDark,
+                ),
                 deleteIconColor: NeoBrutalismTheme.primaryBlack,
                 side: const BorderSide(
                   color: NeoBrutalismTheme.primaryBlack,
@@ -386,16 +533,30 @@ class _AddTodoViewState extends State<AddTodoView> {
               ),
             ),
             ActionChip(
-              label: const Text('ADD TAG'),
+              label: Text(
+                'ADD TAG',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color:
+                      isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack,
+                ),
+              ),
               onPressed: () async {
-                final String? tag = await Get.dialog<String>(_buildTagDialog());
+                final String? tag = await Get.dialog<String>(
+                  _buildTagDialog(isDark),
+                );
                 if (tag != null && tag.isNotEmpty) {
                   setState(() {
                     _tags.add(tag);
                   });
                 }
               },
-              backgroundColor: NeoBrutalismTheme.primaryWhite,
+              backgroundColor:
+                  isDark
+                      ? NeoBrutalismTheme.darkSurface
+                      : NeoBrutalismTheme.primaryWhite,
               side: const BorderSide(
                 color: NeoBrutalismTheme.primaryBlack,
                 width: 2,
@@ -407,37 +568,49 @@ class _AddTodoViewState extends State<AddTodoView> {
     );
   }
 
-  Widget _buildSaveButton() {
+  Widget _buildSaveButton(bool isDark) {
     return NeoButton(
       text: 'SAVE TODO',
       onPressed: _saveTodo,
-      color: NeoBrutalismTheme.accentGreen,
+      color: _getThemedColor(NeoBrutalismTheme.accentGreen, isDark),
       height: 64,
       icon: Icons.save,
     );
   }
 
-  Widget _buildTagDialog() {
+  Widget _buildTagDialog(bool isDark) {
     final controller = TextEditingController();
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: NeoBrutalismTheme.neoBoxRounded(
-          color: NeoBrutalismTheme.primaryWhite,
+          color:
+              isDark
+                  ? NeoBrutalismTheme.darkSurface
+                  : NeoBrutalismTheme.primaryWhite,
+          borderColor: NeoBrutalismTheme.primaryBlack,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'ADD TAG',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color:
+                    isDark
+                        ? NeoBrutalismTheme.darkText
+                        : NeoBrutalismTheme.primaryBlack,
+              ),
             ),
             const SizedBox(height: 16),
             NeoInput(
               controller: controller,
               label: 'TAG NAME',
               hint: 'e.g., Work, Personal',
+              isDark: isDark,
             ),
             const SizedBox(height: 24),
             Row(
@@ -446,7 +619,14 @@ class _AddTodoViewState extends State<AddTodoView> {
                   child: NeoButton(
                     text: 'CANCEL',
                     onPressed: () => Get.back(),
-                    color: NeoBrutalismTheme.primaryWhite,
+                    color:
+                        isDark
+                            ? NeoBrutalismTheme.darkBackground
+                            : NeoBrutalismTheme.primaryWhite,
+                    textColor:
+                        isDark
+                            ? NeoBrutalismTheme.darkText
+                            : NeoBrutalismTheme.primaryBlack,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -454,7 +634,10 @@ class _AddTodoViewState extends State<AddTodoView> {
                   child: NeoButton(
                     text: 'ADD',
                     onPressed: () => Get.back(result: controller.text),
-                    color: NeoBrutalismTheme.accentGreen,
+                    color: _getThemedColor(
+                      NeoBrutalismTheme.accentGreen,
+                      isDark,
+                    ),
                   ),
                 ),
               ],

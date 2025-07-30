@@ -3,10 +3,32 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 
 import '../../../theme/neo_brutalism_theme.dart';
+import '../../../widgets/neo_button.dart';
 import '../controllers/settings_controller.dart';
 
 class SettingsView extends GetView<SettingsController> {
   const SettingsView({super.key});
+
+  // Helper method to get muted colors for dark theme
+  Color _getThemedColor(Color color, bool isDark) {
+    if (!isDark) return color;
+
+    // Return slightly muted versions of colors for dark theme
+    if (color == NeoBrutalismTheme.accentYellow) {
+      return Color(0xFFE6B800); // Slightly darker yellow
+    } else if (color == NeoBrutalismTheme.accentPink) {
+      return Color(0xFFE667A0); // Slightly darker pink
+    } else if (color == NeoBrutalismTheme.accentBlue) {
+      return Color(0xFF4D94FF); // Slightly darker blue
+    } else if (color == NeoBrutalismTheme.accentGreen) {
+      return Color(0xFF00CC66); // Slightly darker green
+    } else if (color == NeoBrutalismTheme.accentOrange) {
+      return Color(0xFFFF8533); // Slightly darker orange
+    } else if (color == NeoBrutalismTheme.accentPurple) {
+      return Color(0xFF9966FF); // Slightly darker purple
+    }
+    return color;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,10 +41,10 @@ class SettingsView extends GetView<SettingsController> {
               : NeoBrutalismTheme.primaryWhite,
       appBar: AppBar(
         title: const Text('SETTINGS'),
-        backgroundColor:
-            isDark
-                ? NeoBrutalismTheme.accentPurple
-                : NeoBrutalismTheme.accentPurple,
+        backgroundColor: _getThemedColor(
+          NeoBrutalismTheme.accentPurple,
+          isDark,
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -238,11 +260,8 @@ class SettingsView extends GetView<SettingsController> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: NeoBrutalismTheme.neoBox(
-        color: NeoBrutalismTheme.accentYellow,
-        borderColor:
-            isDark
-                ? NeoBrutalismTheme.primaryWhite
-                : NeoBrutalismTheme.primaryBlack,
+        color: _getThemedColor(NeoBrutalismTheme.accentYellow, isDark),
+        borderColor: NeoBrutalismTheme.primaryBlack,
       ),
       child: Column(
         children: [
@@ -251,10 +270,7 @@ class SettingsView extends GetView<SettingsController> {
             height: 80,
             decoration: NeoBrutalismTheme.neoBox(
               color: NeoBrutalismTheme.primaryBlack,
-              borderColor:
-                  isDark
-                      ? NeoBrutalismTheme.primaryWhite
-                      : NeoBrutalismTheme.primaryBlack,
+              borderColor: NeoBrutalismTheme.primaryBlack,
             ),
             child: const Icon(
               Icons.rocket_launch,
@@ -367,10 +383,7 @@ class SettingsView extends GetView<SettingsController> {
                   : (isDark
                       ? NeoBrutalismTheme.darkSurface
                       : NeoBrutalismTheme.primaryWhite),
-          borderColor:
-              isDark
-                  ? NeoBrutalismTheme.primaryWhite
-                  : NeoBrutalismTheme.primaryBlack,
+          borderColor: NeoBrutalismTheme.primaryBlack,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -460,10 +473,7 @@ class SettingsView extends GetView<SettingsController> {
                 isDark
                     ? NeoBrutalismTheme.darkSurface
                     : NeoBrutalismTheme.primaryWhite,
-            borderColor:
-                isDark
-                    ? NeoBrutalismTheme.primaryWhite
-                    : NeoBrutalismTheme.primaryBlack,
+            borderColor: NeoBrutalismTheme.primaryBlack,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -473,10 +483,7 @@ class SettingsView extends GetView<SettingsController> {
                 height: 60,
                 decoration: NeoBrutalismTheme.neoBox(
                   color: Colors.red,
-                  borderColor:
-                      isDark
-                          ? NeoBrutalismTheme.primaryWhite
-                          : NeoBrutalismTheme.primaryBlack,
+                  borderColor: NeoBrutalismTheme.primaryBlack,
                 ),
                 child: const Icon(
                   Icons.warning,
@@ -512,31 +519,23 @@ class SettingsView extends GetView<SettingsController> {
               Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton(
+                    child: NeoButton(
+                      text: 'CANCEL',
                       onPressed: () => Get.back(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            isDark
-                                ? NeoBrutalismTheme.darkSurface
-                                : NeoBrutalismTheme.primaryWhite,
-                        foregroundColor:
-                            isDark
-                                ? NeoBrutalismTheme.darkText
-                                : NeoBrutalismTheme.primaryBlack,
-                        side: BorderSide(
-                          color:
-                              isDark
-                                  ? NeoBrutalismTheme.primaryWhite
-                                  : NeoBrutalismTheme.primaryBlack,
-                          width: 3,
-                        ),
-                      ),
-                      child: const Text('CANCEL'),
+                      color:
+                          isDark
+                              ? NeoBrutalismTheme.darkBackground
+                              : NeoBrutalismTheme.primaryWhite,
+                      textColor:
+                          isDark
+                              ? NeoBrutalismTheme.darkText
+                              : NeoBrutalismTheme.primaryBlack,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: ElevatedButton(
+                    child: NeoButton(
+                      text: 'DELETE ALL',
                       onPressed: () async {
                         await controller.clearAllData();
                         Get.back();
@@ -550,15 +549,8 @@ class SettingsView extends GetView<SettingsController> {
                           borderColor: NeoBrutalismTheme.primaryBlack,
                         );
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: NeoBrutalismTheme.primaryWhite,
-                        side: const BorderSide(
-                          color: NeoBrutalismTheme.primaryBlack,
-                          width: 3,
-                        ),
-                      ),
-                      child: const Text('DELETE ALL'),
+                      color: Colors.red,
+                      textColor: NeoBrutalismTheme.primaryWhite,
                     ),
                   ),
                 ],

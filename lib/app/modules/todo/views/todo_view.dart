@@ -6,6 +6,7 @@ import '../../../data/models/todo_model.dart';
 import '../../../theme/neo_brutalism_theme.dart';
 import '../../../widgets/neo_button.dart';
 import '../../../widgets/neo_card.dart';
+import '../../../widgets/neo_date_range_picker.dart';
 import '../controllers/todo_controller.dart';
 
 class TodoView extends GetView<TodoController> {
@@ -13,73 +14,119 @@ class TodoView extends GetView<TodoController> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: NeoBrutalismTheme.primaryWhite,
+      backgroundColor:
+          isDark
+              ? NeoBrutalismTheme.darkBackground
+              : NeoBrutalismTheme.primaryWhite,
       floatingActionButton: FloatingActionButton(
         onPressed: () => Get.toNamed('/add-todo'),
-        backgroundColor: NeoBrutalismTheme.accentPurple,
+        backgroundColor: _getThemedColor(
+          NeoBrutalismTheme.accentPurple,
+          isDark,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(
-            color: NeoBrutalismTheme.primaryBlack,
-            width: 3,
-          ),
+          side: BorderSide(color: NeoBrutalismTheme.primaryBlack, width: 3),
         ),
-        child: const Icon(Icons.add, size: 32),
+        child: const Icon(
+          Icons.add,
+          size: 32,
+          color: NeoBrutalismTheme.primaryBlack,
+        ),
       ).animate().scale(delay: 500.ms),
-      body: Column(
-        children: [
-          _buildHeader(),
-          _buildStats(),
-          _buildFilterTabs(),
-          Expanded(child: Obx(() => _buildTodoList())),
-        ],
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            _buildHeader(isDark),
+            _buildStats(isDark),
+            _buildFilterTabs(isDark),
+            _buildDateFilterSection(isDark),
+            _buildTodoList(isDark),
+            const SizedBox(height: 80), // Space for FAB
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  // Helper method to get muted colors for dark theme
+  Color _getThemedColor(Color color, bool isDark) {
+    if (!isDark) return color;
+
+    // Return slightly muted versions of colors for dark theme
+    if (color == NeoBrutalismTheme.accentYellow) {
+      return Color(0xFFE6B800); // Slightly darker yellow
+    } else if (color == NeoBrutalismTheme.accentPink) {
+      return Color(0xFFE667A0); // Slightly darker pink
+    } else if (color == NeoBrutalismTheme.accentBlue) {
+      return Color(0xFF4D94FF); // Slightly darker blue
+    } else if (color == NeoBrutalismTheme.accentGreen) {
+      return Color(0xFF00CC66); // Slightly darker green
+    } else if (color == NeoBrutalismTheme.accentOrange) {
+      return Color(0xFFFF8533); // Slightly darker orange
+    } else if (color == NeoBrutalismTheme.accentPurple) {
+      return Color(0xFF9966FF); // Slightly darker purple
+    }
+    return color;
+  }
+
+  Widget _buildHeader(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(20),
-      child: const Text(
+      child: Text(
         'TODOS',
-        style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+        style: TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.w900,
+          color:
+              isDark
+                  ? NeoBrutalismTheme.darkText
+                  : NeoBrutalismTheme.primaryBlack,
+        ),
       ),
     ).animate().fadeIn().slideX(begin: -0.2, end: 0);
   }
 
-  Widget _buildStats() {
+  Widget _buildStats(bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildStatCard(
-              'PENDING',
-              controller.pendingCount.value.toString(),
-              NeoBrutalismTheme.accentOrange,
-              Icons.pending_actions,
+      child: Obx(
+        () => Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                'PENDING',
+                controller.pendingCount.value.toString(),
+                _getThemedColor(NeoBrutalismTheme.accentOrange, isDark),
+                Icons.pending_actions,
+                isDark,
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildStatCard(
-              'COMPLETED',
-              controller.completedCount.value.toString(),
-              NeoBrutalismTheme.accentGreen,
-              Icons.check_circle,
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                'COMPLETED',
+                controller.completedCount.value.toString(),
+                _getThemedColor(NeoBrutalismTheme.accentGreen, isDark),
+                Icons.check_circle,
+                isDark,
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildStatCard(
-              'OVERDUE',
-              controller.overdueCount.value.toString(),
-              NeoBrutalismTheme.accentPink,
-              Icons.warning,
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                'OVERDUE',
+                controller.overdueCount.value.toString(),
+                _getThemedColor(NeoBrutalismTheme.accentPink, isDark),
+                Icons.warning,
+                isDark,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     ).animate().fadeIn(delay: 200.ms);
   }
@@ -89,28 +136,38 @@ class TodoView extends GetView<TodoController> {
     String value,
     Color color,
     IconData icon,
+    bool isDark,
   ) {
     return NeoCard(
       color: color,
       padding: const EdgeInsets.all(12),
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         children: [
-          Icon(icon, size: 24),
+          Icon(icon, size: 24, color: NeoBrutalismTheme.primaryBlack),
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              color: NeoBrutalismTheme.primaryBlack,
+            ),
           ),
           Text(
             label,
-            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: NeoBrutalismTheme.primaryBlack,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterTabs() {
+  Widget _buildFilterTabs(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(16),
       child: Obx(
@@ -121,6 +178,7 @@ class TodoView extends GetView<TodoController> {
                 'ALL',
                 'all',
                 controller.selectedFilter.value == 'all',
+                isDark,
               ),
             ),
             const SizedBox(width: 8),
@@ -129,6 +187,7 @@ class TodoView extends GetView<TodoController> {
                 'PENDING',
                 'pending',
                 controller.selectedFilter.value == 'pending',
+                isDark,
               ),
             ),
             const SizedBox(width: 8),
@@ -137,6 +196,7 @@ class TodoView extends GetView<TodoController> {
                 'COMPLETED',
                 'completed',
                 controller.selectedFilter.value == 'completed',
+                isDark,
               ),
             ),
           ],
@@ -145,7 +205,12 @@ class TodoView extends GetView<TodoController> {
     ).animate().fadeIn(delay: 400.ms);
   }
 
-  Widget _buildFilterTab(String label, String value, bool isSelected) {
+  Widget _buildFilterTab(
+    String label,
+    String value,
+    bool isSelected,
+    bool isDark,
+  ) {
     return GestureDetector(
       onTap: () => controller.changeFilter(value),
       child: AnimatedContainer(
@@ -154,42 +219,163 @@ class TodoView extends GetView<TodoController> {
         decoration: NeoBrutalismTheme.neoBox(
           color:
               isSelected
-                  ? NeoBrutalismTheme.accentBlue
-                  : NeoBrutalismTheme.primaryWhite,
+                  ? _getThemedColor(NeoBrutalismTheme.accentBlue, isDark)
+                  : (isDark
+                      ? NeoBrutalismTheme.darkSurface
+                      : NeoBrutalismTheme.primaryWhite),
           offset: isSelected ? 2 : 5,
+          borderColor: NeoBrutalismTheme.primaryBlack,
         ),
         child: Center(
           child: Text(
             label,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              color:
+                  isSelected
+                      ? NeoBrutalismTheme.primaryBlack
+                      : (isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack),
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTodoList() {
-    final todos = controller.getFilteredTodos();
+  // New date filter section
+  Widget _buildDateFilterSection(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Obx(() {
+        final dateFilter = controller.dateFilter.value;
+        final hasDateFilter =
+            dateFilter['start'] != null || dateFilter['end'] != null;
 
-    if (todos.isEmpty) {
-      return _buildEmptyState();
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: todos.length,
-      itemBuilder: (context, index) {
-        final todo = todos[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: _buildTodoCard(todo, index),
+        return GestureDetector(
+          onTap: () => _showDateRangePicker(Get.context!, isDark),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: NeoBrutalismTheme.neoBox(
+              color:
+                  hasDateFilter
+                      ? _getThemedColor(
+                        Color(0xFF00FFFF),
+                        isDark,
+                      ).withOpacity(0.3)
+                      : (isDark
+                          ? NeoBrutalismTheme.darkSurface
+                          : NeoBrutalismTheme.primaryWhite),
+              borderColor: NeoBrutalismTheme.primaryBlack,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.date_range,
+                  color:
+                      isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    hasDateFilter
+                        ? _formatDateRange(
+                          dateFilter['start'],
+                          dateFilter['end'],
+                        )
+                        : 'Filter by date range',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color:
+                          isDark
+                              ? NeoBrutalismTheme.darkText
+                              : NeoBrutalismTheme.primaryBlack,
+                    ),
+                  ),
+                ),
+                if (hasDateFilter)
+                  IconButton(
+                    icon: Icon(
+                      Icons.clear,
+                      size: 20,
+                      color:
+                          isDark
+                              ? NeoBrutalismTheme.darkText
+                              : NeoBrutalismTheme.primaryBlack,
+                    ),
+                    onPressed: () => controller.clearDateFilter(),
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(),
+                  ),
+              ],
+            ),
+          ),
         );
-      },
+      }),
+    ).animate().fadeIn(delay: 500.ms);
+  }
+
+  String _formatDateRange(DateTime? start, DateTime? end) {
+    if (start == null && end == null) return 'Filter by date range';
+
+    final format = (DateTime date) => '${date.day}/${date.month}/${date.year}';
+
+    if (start != null && end != null) {
+      return '${format(start)} - ${format(end)}';
+    } else if (start != null) {
+      return 'From ${format(start)}';
+    } else {
+      return 'Until ${format(end!)}';
+    }
+  }
+
+  void _showDateRangePicker(BuildContext context, bool isDark) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => NeoDateRangePicker(
+            initialStartDate: controller.dateFilter.value['start'],
+            initialEndDate: controller.dateFilter.value['end'],
+            firstDate: DateTime(2020),
+            lastDate: DateTime(2030),
+            onDateRangeSelected: (start, end) {
+              controller.setDateFilter(start, end);
+            },
+          ),
     );
   }
 
-  Widget _buildEmptyState() {
-    return Expanded(
+  Widget _buildTodoList(bool isDark) {
+    return Obx(() {
+      final todos = controller.getFilteredTodos();
+
+      if (todos.isEmpty) {
+        return _buildEmptyState(isDark);
+      }
+
+      return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        physics: const NeverScrollableScrollPhysics(), // Disable inner scroll
+        shrinkWrap: true, // Allow ListView to size itself
+        itemCount: todos.length,
+        itemBuilder: (context, index) {
+          final todo = todos[index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: _buildTodoCard(todo, index, isDark),
+          );
+        },
+      );
+    });
+  }
+
+  Widget _buildEmptyState(bool isDark) {
+    return Container(
+      height: 400, // Fixed height for empty state
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -198,25 +384,40 @@ class TodoView extends GetView<TodoController> {
               width: 120,
               height: 120,
               decoration: NeoBrutalismTheme.neoBox(
-                color: NeoBrutalismTheme.accentPurple,
+                color: _getThemedColor(NeoBrutalismTheme.accentPurple, isDark),
+                borderColor: NeoBrutalismTheme.primaryBlack,
               ),
-              child: const Icon(Icons.task_alt, size: 60),
+              child: const Icon(
+                Icons.task_alt,
+                size: 60,
+                color: NeoBrutalismTheme.primaryBlack,
+              ),
             ).animate().scale(duration: 500.ms),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'NO TODOS',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color:
+                    isDark
+                        ? NeoBrutalismTheme.darkText
+                        : NeoBrutalismTheme.primaryBlack,
+              ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Create your first todo',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 16,
+                color: isDark ? Colors.grey[400] : Colors.grey,
+              ),
             ),
             const SizedBox(height: 24),
             NeoButton(
               text: 'ADD TODO',
               onPressed: () => Get.toNamed('/add-todo'),
-              color: NeoBrutalismTheme.accentPurple,
+              color: _getThemedColor(NeoBrutalismTheme.accentPurple, isDark),
               icon: Icons.add,
             ),
           ],
@@ -225,11 +426,14 @@ class TodoView extends GetView<TodoController> {
     );
   }
 
-  Widget _buildTodoCard(TodoModel todo, int index) {
+  Widget _buildTodoCard(TodoModel todo, int index, bool isDark) {
     final isOverdue =
         todo.dueDate != null &&
         todo.dueDate!.isBefore(DateTime.now()) &&
         !todo.isCompleted;
+
+    // Enhanced color scheme for better visibility
+    Color cardColor = _getTodoCardColor(todo, isDark);
 
     return Dismissible(
       key: Key(todo.id),
@@ -237,7 +441,10 @@ class TodoView extends GetView<TodoController> {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        decoration: NeoBrutalismTheme.neoBox(color: Colors.red),
+        decoration: NeoBrutalismTheme.neoBox(
+          color: _getThemedColor(NeoBrutalismTheme.accentPink, isDark),
+          borderColor: NeoBrutalismTheme.primaryBlack,
+        ),
         child: const Icon(
           Icons.delete,
           color: NeoBrutalismTheme.primaryWhite,
@@ -248,20 +455,53 @@ class TodoView extends GetView<TodoController> {
         controller.deleteTodo(todo.id);
       },
       child: NeoCard(
-        color: _getPriorityColor(todo.priority),
+        color: cardColor,
         onTap: () => Get.toNamed('/todo-detail', arguments: todo),
+        borderColor: NeoBrutalismTheme.primaryBlack,
         child: Row(
           children: [
-            Checkbox(
-              value: todo.isCompleted,
-              onChanged: (value) => controller.toggleTodo(todo),
-              activeColor: NeoBrutalismTheme.primaryBlack,
-              side: const BorderSide(
-                color: NeoBrutalismTheme.primaryBlack,
-                width: 2,
+            // Custom Neo Brutalism Checkbox
+            GestureDetector(
+              onTap: () => controller.toggleTodo(todo),
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color:
+                      todo.isCompleted
+                          ? _getThemedColor(
+                            NeoBrutalismTheme.accentGreen,
+                            isDark,
+                          )
+                          : (isDark
+                              ? NeoBrutalismTheme.darkSurface
+                              : NeoBrutalismTheme.primaryWhite),
+                  border: Border.all(
+                    color: NeoBrutalismTheme.primaryBlack,
+                    width: 3,
+                  ),
+                  borderRadius: BorderRadius.circular(4),
+                  boxShadow: [
+                    BoxShadow(
+                      color:
+                          isDark
+                              ? Colors.black
+                              : NeoBrutalismTheme.primaryBlack,
+                      offset: const Offset(2, 2),
+                    ),
+                  ],
+                ),
+                child:
+                    todo.isCompleted
+                        ? const Icon(
+                          Icons.check,
+                          size: 18,
+                          color: NeoBrutalismTheme.primaryBlack,
+                        )
+                        : null,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,91 +510,194 @@ class TodoView extends GetView<TodoController> {
                     todo.title,
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w900,
+                      color: _getTextColor(cardColor, isDark),
                       decoration:
                           todo.isCompleted ? TextDecoration.lineThrough : null,
                     ),
                   ),
-                  if (todo.description != null && todo.description!.isNotEmpty)
+                  if (todo.description != null &&
+                      todo.description!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
                     Text(
                       todo.description!,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w600,
+                        color: _getTextColor(
+                          cardColor,
+                          isDark,
+                        ).withOpacity(0.8),
                         decoration:
                             todo.isCompleted
                                 ? TextDecoration.lineThrough
                                 : null,
                       ),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  const SizedBox(height: 4),
+                  ],
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       if (todo.dueDate != null) ...[
-                        Icon(
-                          Icons.calendar_today,
-                          size: 14,
-                          color: isOverdue ? Colors.red : Colors.grey[600],
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${todo.dueDate!.day}/${todo.dueDate!.month}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isOverdue ? Colors.red : Colors.grey[600],
-                            fontWeight: isOverdue ? FontWeight.bold : null,
+                        GestureDetector(
+                          onTap:
+                              () => _showSingleDatePicker(
+                                Get.context!,
+                                todo,
+                                isDark,
+                              ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  isOverdue
+                                      ? NeoBrutalismTheme.primaryWhite
+                                      : _getThemedColor(
+                                        NeoBrutalismTheme.accentBlue,
+                                        isDark,
+                                      ),
+                              border: Border.all(
+                                color: NeoBrutalismTheme.primaryBlack,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.calendar_today,
+                                  size: 12,
+                                  color: NeoBrutalismTheme.primaryBlack,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${todo.dueDate!.day}/${todo.dueDate!.month}',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                    color: NeoBrutalismTheme.primaryBlack,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
                       if (todo.hasReminder) ...[
-                        const SizedBox(width: 12),
-                        Icon(
-                          Icons.notifications_active,
-                          size: 14,
-                          color: Colors.grey[600],
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: NeoBrutalismTheme.primaryWhite,
+                            border: Border.all(
+                              color: NeoBrutalismTheme.primaryBlack,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Icon(
+                            Icons.notifications_active,
+                            size: 12,
+                            color: NeoBrutalismTheme.primaryBlack,
+                          ),
                         ),
                       ],
+                      const Spacer(),
+                      _buildPriorityIndicator(todo.priority, isDark),
                     ],
                   ),
                 ],
               ),
             ),
-            _buildPriorityIndicator(todo.priority),
           ],
         ),
       ),
     ).animate().fadeIn(delay: (100 * index).ms).slideX(begin: 0.2, end: 0);
   }
 
-  Color _getPriorityColor(int priority) {
-    switch (priority) {
-      case 3:
-        return NeoBrutalismTheme.accentPink.withOpacity(0.3);
-      case 2:
-        return NeoBrutalismTheme.accentYellow.withOpacity(0.3);
-      default:
-        return NeoBrutalismTheme.primaryWhite;
+  void _showSingleDatePicker(
+    BuildContext context,
+    TodoModel todo,
+    bool isDark,
+  ) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => NeoDateRangePicker(
+            initialStartDate: todo.dueDate,
+            firstDate: DateTime.now(),
+            lastDate: DateTime(2030),
+            onDateRangeSelected: (start, end) {
+              if (start != null) {
+                controller.updateTodoDueDate(todo, start);
+              }
+            },
+          ),
+    );
+  }
+
+  Color _getTodoCardColor(TodoModel todo, bool isDark) {
+    // If completed, use bright green
+    if (todo.isCompleted) {
+      return _getThemedColor(NeoBrutalismTheme.accentGreen, isDark);
+    }
+
+    // Check if overdue
+    final isOverdue =
+        todo.dueDate != null &&
+        todo.dueDate!.isBefore(DateTime.now()) &&
+        !todo.isCompleted;
+
+    if (isOverdue) {
+      return _getThemedColor(NeoBrutalismTheme.accentPink, isDark);
+    }
+
+    // Priority-based colors - bright and readable
+    switch (todo.priority) {
+      case 3: // High priority
+        return _getThemedColor(NeoBrutalismTheme.accentOrange, isDark);
+      case 2: // Medium priority
+        return _getThemedColor(NeoBrutalismTheme.accentYellow, isDark);
+      default: // Low priority
+        return isDark
+            ? NeoBrutalismTheme.darkSurface
+            : NeoBrutalismTheme.primaryWhite;
     }
   }
 
-  Widget _buildPriorityIndicator(int priority) {
+  Color _getTextColor(Color backgroundColor, bool isDark) {
+    // For accent colors (including muted versions), always use black text
+    if (backgroundColor != NeoBrutalismTheme.darkSurface &&
+        backgroundColor != NeoBrutalismTheme.primaryWhite) {
+      return NeoBrutalismTheme.primaryBlack;
+    }
+
+    // For dark surface or white background
+    return isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack;
+  }
+
+  Widget _buildPriorityIndicator(int priority, bool isDark) {
     String label;
     Color color;
 
     switch (priority) {
       case 3:
         label = 'HIGH';
-        color = Colors.red;
+        color = _getThemedColor(NeoBrutalismTheme.accentPink, isDark);
         break;
       case 2:
         label = 'MED';
-        color = Colors.orange;
+        color = _getThemedColor(NeoBrutalismTheme.accentOrange, isDark);
         break;
       default:
         label = 'LOW';
-        color = Colors.green;
+        color = _getThemedColor(NeoBrutalismTheme.accentGreen, isDark);
     }
 
     return Container(
@@ -362,13 +705,20 @@ class TodoView extends GetView<TodoController> {
       decoration: BoxDecoration(
         color: color,
         border: Border.all(color: NeoBrutalismTheme.primaryBlack, width: 2),
+        borderRadius: BorderRadius.circular(4),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black : NeoBrutalismTheme.primaryBlack,
+            offset: const Offset(2, 2),
+          ),
+        ],
       ),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w900,
-          color: NeoBrutalismTheme.primaryWhite,
+          color: NeoBrutalismTheme.primaryBlack,
         ),
       ),
     );

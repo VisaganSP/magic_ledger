@@ -19,33 +19,62 @@ class ExpenseDetailView extends StatelessWidget {
 
   ExpenseDetailView({super.key});
 
+  // Helper method to get muted colors for dark theme
+  Color _getThemedColor(Color color, bool isDark) {
+    if (!isDark) return color;
+
+    // Return slightly muted versions of colors for dark theme
+    if (color == NeoBrutalismTheme.accentYellow) {
+      return Color(0xFFE6B800); // Slightly darker yellow
+    } else if (color == NeoBrutalismTheme.accentPink) {
+      return Color(0xFFE667A0); // Slightly darker pink
+    } else if (color == NeoBrutalismTheme.accentBlue) {
+      return Color(0xFF4D94FF); // Slightly darker blue
+    } else if (color == NeoBrutalismTheme.accentGreen) {
+      return Color(0xFF00CC66); // Slightly darker green
+    } else if (color == NeoBrutalismTheme.accentOrange) {
+      return Color(0xFFFF8533); // Slightly darker orange
+    } else if (color == NeoBrutalismTheme.accentPurple) {
+      return Color(0xFF9966FF); // Slightly darker purple
+    }
+    return color;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     // Safely get category with fallback
     final category = _getCategory();
     final categoryIcon = category?.icon ?? '💰';
     final categoryName = category?.name ?? 'Unknown';
-    final categoryColor = category?.colorValue ?? Colors.grey;
+    final categoryColor = _getThemedColor(
+      category?.colorValue ?? Colors.grey,
+      isDark,
+    );
 
     return Scaffold(
-      backgroundColor: NeoBrutalismTheme.primaryWhite,
-      appBar: _buildAppBar(context, categoryColor),
+      backgroundColor:
+          isDark
+              ? NeoBrutalismTheme.darkBackground
+              : NeoBrutalismTheme.primaryWhite,
+      appBar: _buildAppBar(context, categoryColor, isDark),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildMainInfo(categoryColor, categoryIcon, categoryName),
+          _buildMainInfo(categoryColor, categoryIcon, categoryName, isDark),
           const SizedBox(height: 24),
-          _buildDetailsSection(),
+          _buildDetailsSection(isDark),
           if (expense.tags != null && expense.tags!.isNotEmpty) ...[
             const SizedBox(height: 24),
-            _buildTagsSection(),
+            _buildTagsSection(isDark),
           ],
           if (expense.receiptPath != null) ...[
             const SizedBox(height: 24),
-            _buildReceiptSection(),
+            _buildReceiptSection(isDark),
           ],
           const SizedBox(height: 32),
-          _buildActionButtons(context),
+          _buildActionButtons(context, isDark),
         ],
       ),
     );
@@ -65,11 +94,14 @@ class ExpenseDetailView extends StatelessWidget {
     }
   }
 
-  AppBar _buildAppBar(BuildContext context, Color categoryColor) {
+  AppBar _buildAppBar(BuildContext context, Color categoryColor, bool isDark) {
     return AppBar(
       title: const Text(
         'EXPENSE DETAILS',
-        style: TextStyle(fontWeight: FontWeight.w900),
+        style: TextStyle(
+          fontWeight: FontWeight.w900,
+          color: NeoBrutalismTheme.primaryBlack,
+        ),
       ),
       backgroundColor: categoryColor,
       foregroundColor: NeoBrutalismTheme.primaryBlack,
@@ -81,7 +113,7 @@ class ExpenseDetailView extends StatelessWidget {
         ),
         IconButton(
           icon: const Icon(Icons.delete),
-          onPressed: () => _showDeleteDialog(context),
+          onPressed: () => _showDeleteDialog(context, isDark),
         ),
       ],
     );
@@ -91,14 +123,16 @@ class ExpenseDetailView extends StatelessWidget {
     Color categoryColor,
     String categoryIcon,
     String categoryName,
+    bool isDark,
   ) {
     return NeoCard(
       color: categoryColor,
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         children: [
           _buildExpenseHeader(categoryIcon, categoryName),
           const SizedBox(height: 16),
-          _buildDateDisplay(),
+          _buildDateDisplay(isDark),
         ],
       ),
     );
@@ -188,28 +222,38 @@ class ExpenseDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildDateDisplay() {
+  Widget _buildDateDisplay(bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: NeoBrutalismTheme.neoBox(
-        color: NeoBrutalismTheme.primaryWhite,
+        color:
+            isDark
+                ? NeoBrutalismTheme.darkSurface
+                : NeoBrutalismTheme.primaryWhite,
+        borderColor: NeoBrutalismTheme.primaryBlack,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.calendar_today,
             size: 20,
-            color: NeoBrutalismTheme.primaryBlack,
+            color:
+                isDark
+                    ? NeoBrutalismTheme.darkText
+                    : NeoBrutalismTheme.primaryBlack,
           ),
           const SizedBox(width: 8),
           Text(
             _formatDate(expense.date),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: NeoBrutalismTheme.primaryBlack,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
             ),
           ),
         ],
@@ -217,38 +261,51 @@ class ExpenseDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailsSection() {
+  Widget _buildDetailsSection(bool isDark) {
     return NeoCard(
+      color:
+          isDark
+              ? NeoBrutalismTheme.darkSurface
+              : NeoBrutalismTheme.primaryWhite,
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'DETAILS',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w900,
-              color: NeoBrutalismTheme.primaryBlack,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
             ),
           ),
           const SizedBox(height: 16),
           if (expense.description != null && expense.description!.isNotEmpty)
-            _buildDetailRow('Description', expense.description!),
+            _buildDetailRow('Description', expense.description!, isDark),
           if (expense.location != null && expense.location!.isNotEmpty)
-            _buildDetailRow('Location', expense.location!),
-          _buildDetailRow('Amount', '₹${expense.amount.toStringAsFixed(2)}'),
+            _buildDetailRow('Location', expense.location!, isDark),
+          _buildDetailRow(
+            'Amount',
+            '₹${expense.amount.toStringAsFixed(2)}',
+            isDark,
+          ),
           _buildDetailRow(
             'Type',
             expense.isRecurring ? 'Recurring' : 'One-time',
+            isDark,
           ),
           if (expense.isRecurring)
-            _buildDetailRow('Frequency', _getFormattedFrequency()),
-          _buildDetailRow('Created', _formatDateTime(expense.date)),
+            _buildDetailRow('Frequency', _getFormattedFrequency(), isDark),
+          _buildDetailRow('Created', _formatDateTime(expense.date), isDark),
         ],
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(String label, String value, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -258,9 +315,9 @@ class ExpenseDetailView extends StatelessWidget {
             width: 100,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Colors.grey,
+                color: isDark ? Colors.grey[400] : Colors.grey,
                 fontSize: 14,
               ),
             ),
@@ -268,10 +325,13 @@ class ExpenseDetailView extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: NeoBrutalismTheme.primaryBlack,
+                color:
+                    isDark
+                        ? NeoBrutalismTheme.darkText
+                        : NeoBrutalismTheme.primaryBlack,
               ),
             ),
           ),
@@ -280,17 +340,25 @@ class ExpenseDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildTagsSection() {
+  Widget _buildTagsSection(bool isDark) {
     return NeoCard(
+      color:
+          isDark
+              ? NeoBrutalismTheme.darkSurface
+              : NeoBrutalismTheme.primaryWhite,
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'TAGS',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w900,
-              color: NeoBrutalismTheme.primaryBlack,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
             ),
           ),
           const SizedBox(height: 16),
@@ -306,7 +374,11 @@ class ExpenseDetailView extends StatelessWidget {
                           vertical: 8,
                         ),
                         decoration: NeoBrutalismTheme.neoBox(
-                          color: NeoBrutalismTheme.accentYellow,
+                          color: _getThemedColor(
+                            NeoBrutalismTheme.accentYellow,
+                            isDark,
+                          ),
+                          borderColor: NeoBrutalismTheme.primaryBlack,
                         ),
                         child: Text(
                           tag.toUpperCase(),
@@ -324,24 +396,38 @@ class ExpenseDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildReceiptSection() {
+  Widget _buildReceiptSection(bool isDark) {
     return NeoCard(
+      color:
+          isDark
+              ? NeoBrutalismTheme.darkSurface
+              : NeoBrutalismTheme.primaryWhite,
+      borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'RECEIPT',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
-                  color: NeoBrutalismTheme.primaryBlack,
+                  color:
+                      isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack,
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.fullscreen),
+                icon: Icon(
+                  Icons.fullscreen,
+                  color:
+                      isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack,
+                ),
                 onPressed: () => _showFullScreenReceipt(),
               ),
             ],
@@ -353,7 +439,11 @@ class ExpenseDetailView extends StatelessWidget {
               height: 300,
               width: double.infinity,
               decoration: NeoBrutalismTheme.neoBox(
-                color: NeoBrutalismTheme.primaryWhite,
+                color:
+                    isDark
+                        ? NeoBrutalismTheme.darkBackground
+                        : NeoBrutalismTheme.primaryWhite,
+                borderColor: NeoBrutalismTheme.primaryBlack,
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
@@ -362,19 +452,21 @@ class ExpenseDetailView extends StatelessWidget {
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      color: Colors.grey[200],
-                      child: const Column(
+                      color: isDark ? Colors.grey[800] : Colors.grey[200],
+                      child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
                             Icons.broken_image,
                             size: 64,
-                            color: Colors.grey,
+                            color: isDark ? Colors.grey[400] : Colors.grey,
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Text(
                             'Failed to load image',
-                            style: TextStyle(color: Colors.grey),
+                            style: TextStyle(
+                              color: isDark ? Colors.grey[400] : Colors.grey,
+                            ),
                           ),
                         ],
                       ),
@@ -417,7 +509,7 @@ class ExpenseDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
+  Widget _buildActionButtons(BuildContext context, bool isDark) {
     return Column(
       children: [
         Row(
@@ -426,7 +518,7 @@ class ExpenseDetailView extends StatelessWidget {
               child: NeoButton(
                 text: 'DUPLICATE',
                 onPressed: _duplicateExpense,
-                color: NeoBrutalismTheme.accentBlue,
+                color: _getThemedColor(NeoBrutalismTheme.accentBlue, isDark),
                 icon: Icons.copy,
               ),
             ),
@@ -435,7 +527,7 @@ class ExpenseDetailView extends StatelessWidget {
               child: NeoButton(
                 text: 'SHARE',
                 onPressed: () => _shareExpense(context),
-                color: NeoBrutalismTheme.accentGreen,
+                color: _getThemedColor(NeoBrutalismTheme.accentGreen, isDark),
                 icon: Icons.share,
               ),
             ),
@@ -447,7 +539,7 @@ class ExpenseDetailView extends StatelessWidget {
           child: NeoButton(
             text: 'EDIT EXPENSE',
             onPressed: _navigateToEdit,
-            color: NeoBrutalismTheme.accentOrange,
+            color: _getThemedColor(NeoBrutalismTheme.accentOrange, isDark),
             icon: Icons.edit,
           ),
         ),
@@ -537,14 +629,18 @@ Shared from Magic Ledger App
     );
   }
 
-  void _showDeleteDialog(BuildContext context) {
+  void _showDeleteDialog(BuildContext context, bool isDark) {
     Get.dialog(
       Dialog(
         backgroundColor: Colors.transparent,
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: NeoBrutalismTheme.neoBoxRounded(
-            color: NeoBrutalismTheme.primaryWhite,
+            color:
+                isDark
+                    ? NeoBrutalismTheme.darkSurface
+                    : NeoBrutalismTheme.primaryWhite,
+            borderColor: NeoBrutalismTheme.primaryBlack,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -555,29 +651,35 @@ Shared from Magic Ledger App
                 color: Colors.orange,
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'DELETE EXPENSE?',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
-                  color: NeoBrutalismTheme.primaryBlack,
+                  color:
+                      isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack,
                 ),
               ),
               const SizedBox(height: 12),
               Text(
                 'Are you sure you want to delete "${expense.title}"?',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
-                  color: NeoBrutalismTheme.primaryBlack,
+                  color:
+                      isDark
+                          ? NeoBrutalismTheme.darkText
+                          : NeoBrutalismTheme.primaryBlack,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'This action cannot be undone.',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey,
+                  color: isDark ? Colors.grey[400] : Colors.grey,
                   fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
@@ -589,8 +691,14 @@ Shared from Magic Ledger App
                     child: NeoButton(
                       text: 'CANCEL',
                       onPressed: () => Get.back(),
-                      color: NeoBrutalismTheme.primaryWhite,
-                      textColor: NeoBrutalismTheme.primaryBlack,
+                      color:
+                          isDark
+                              ? NeoBrutalismTheme.darkBackground
+                              : NeoBrutalismTheme.primaryWhite,
+                      textColor:
+                          isDark
+                              ? NeoBrutalismTheme.darkText
+                              : NeoBrutalismTheme.primaryBlack,
                     ),
                   ),
                   const SizedBox(width: 12),

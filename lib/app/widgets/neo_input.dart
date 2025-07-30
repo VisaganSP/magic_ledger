@@ -11,6 +11,7 @@ class NeoInput extends StatelessWidget {
   final int maxLines;
   final String? prefixText;
   final IconData? suffixIcon;
+  final bool? isDark;
 
   const NeoInput({
     super.key,
@@ -22,35 +23,86 @@ class NeoInput extends StatelessWidget {
     this.maxLines = 1,
     this.prefixText,
     this.suffixIcon,
+    this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
+    // If isDark is not provided, detect from theme
+    final bool darkMode =
+        isDark ?? Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w900,
+            color:
+                darkMode
+                    ? NeoBrutalismTheme.darkText
+                    : NeoBrutalismTheme.primaryBlack,
+          ),
         ),
         const SizedBox(height: 8),
         Container(
-          decoration: NeoBrutalismTheme.neoBox(),
+          decoration: NeoBrutalismTheme.neoBox(
+            color:
+                darkMode
+                    ? NeoBrutalismTheme.darkSurface
+                    : NeoBrutalismTheme.primaryWhite,
+            borderColor: NeoBrutalismTheme.primaryBlack,
+          ),
           child: TextFormField(
             controller: controller,
             validator: validator,
             keyboardType: keyboardType,
             maxLines: maxLines,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color:
+                  darkMode
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
+            ),
+            cursorColor:
+                darkMode
+                    ? NeoBrutalismTheme.darkText
+                    : NeoBrutalismTheme.primaryBlack,
             decoration: InputDecoration(
               hintText: hint,
               prefixText: prefixText,
-              suffixIcon: suffixIcon != null ? Icon(suffixIcon) : null,
+              prefixStyle: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color:
+                    darkMode
+                        ? NeoBrutalismTheme.darkText
+                        : NeoBrutalismTheme.primaryBlack,
+              ),
+              suffixIcon:
+                  suffixIcon != null
+                      ? Icon(
+                        suffixIcon,
+                        color:
+                            darkMode
+                                ? NeoBrutalismTheme.darkText
+                                : NeoBrutalismTheme.primaryBlack,
+                      )
+                      : null,
               contentPadding: const EdgeInsets.all(16),
               border: InputBorder.none,
               hintStyle: TextStyle(
-                color: Colors.grey[400],
+                color: darkMode ? Colors.grey[600] : Colors.grey[400],
                 fontWeight: FontWeight.normal,
+              ),
+              errorStyle: const TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
               ),
             ),
           ),

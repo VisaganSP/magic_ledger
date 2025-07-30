@@ -12,6 +12,9 @@ class TodoController extends GetxController {
   final RxInt completedCount = 0.obs;
   final RxInt overdueCount = 0.obs;
 
+  // Add date filter property
+  final dateFilter = {'start': null as DateTime?, 'end': null as DateTime?}.obs;
+
   final NotificationService _notificationService = NotificationService();
 
   @override
@@ -95,15 +98,79 @@ class TodoController extends GetxController {
     selectedFilter.value = filter;
   }
 
-  List<TodoModel> getFilteredTodos() {
-    switch (selectedFilter.value) {
-      case 'pending':
-        return todos.where((t) => !t.isCompleted).toList();
-      case 'completed':
-        return todos.where((t) => t.isCompleted).toList();
-      default:
-        return todos;
+  // Add date filter methods
+  void setDateFilter(DateTime? start, DateTime? end) {
+    dateFilter.value = {'start': start, 'end': end};
+  }
+
+  void clearDateFilter() {
+    dateFilter.value = {'start': null, 'end': null};
+  }
+
+  Future<void> updateTodoDueDate(TodoModel todo, DateTime newDate) async {
+    // Cancel old reminder if exists
+    if (todo.hasReminder && todo.reminderTime != null) {
+      await _notificationService.cancelNotification(todo.id.hashCode);
     }
+
+    // Update due date
+    todo.dueDate = newDate;
+
+    // Update reminder time if todo has reminder
+    if (todo.hasReminder && todo.reminderTime != null) {
+      // Keep the same time but update the date
+      final oldTime = todo.reminderTime!;
+      todo.reminderTime = DateTime(
+        newDate.year,
+        newDate.month,
+        newDate.day,
+        oldTime.hour,
+        oldTime.minute,
+      );
+
+      // Schedule new reminder
+      await _notificationService.scheduleNotification(
+        id: todo.id.hashCode,
+        title: 'Todo Reminder',
+        body: todo.title,
+        scheduledDate: todo.reminderTime!,
+      );
+    }
+
+    await todo.save();
+    loadTodos();
+  }
+
+  List<TodoModel> getFilteredTodos() {
+    var filtered =
+        todos.where((todo) {
+          // Apply status filter
+          switch (selectedFilter.value) {
+            case 'pending':
+              if (todo.isCompleted) return false;
+              break;
+            case 'completed':
+              if (!todo.isCompleted) return false;
+              break;
+          }
+
+          // Apply date filter
+          final start = dateFilter.value['start'];
+          final end = dateFilter.value['end'];
+
+          if (start != null || end != null) {
+            if (todo.dueDate == null) return false;
+
+            if (start != null && todo.dueDate!.isBefore(start)) return false;
+            if (end != null &&
+                todo.dueDate!.isAfter(end.add(Duration(days: 1))))
+              return false;
+          }
+
+          return true;
+        }).toList();
+
+    return filtered;
   }
 
   List<TodoModel> getTodosByPriority(int priority) {
