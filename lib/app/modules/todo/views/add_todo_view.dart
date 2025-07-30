@@ -27,27 +27,48 @@ class _AddTodoViewState extends State<AddTodoView> {
   int _priority = 1;
   bool _hasReminder = false;
   TimeOfDay _reminderTime = TimeOfDay.now();
-  final List<String> _tags = [];
+  List<String> _tags = [];
+
+  // Track if we're editing
+  bool _isEditMode = false;
+  TodoModel? _editingTodo;
 
   // Helper method to get muted colors for dark theme
   Color _getThemedColor(Color color, bool isDark) {
-    if (!isDark) return color;
+    return NeoBrutalismTheme.getThemedColor(color, isDark);
+  }
 
-    // Return slightly muted versions of colors for dark theme
-    if (color == NeoBrutalismTheme.accentYellow) {
-      return Color(0xFFE6B800); // Slightly darker yellow
-    } else if (color == NeoBrutalismTheme.accentPink) {
-      return Color(0xFFE667A0); // Slightly darker pink
-    } else if (color == NeoBrutalismTheme.accentBlue) {
-      return Color(0xFF4D94FF); // Slightly darker blue
-    } else if (color == NeoBrutalismTheme.accentGreen) {
-      return Color(0xFF00CC66); // Slightly darker green
-    } else if (color == NeoBrutalismTheme.accentOrange) {
-      return Color(0xFFFF8533); // Slightly darker orange
-    } else if (color == NeoBrutalismTheme.accentPurple) {
-      return Color(0xFF9966FF); // Slightly darker purple
+  @override
+  void initState() {
+    super.initState();
+    _initializeFormData();
+  }
+
+  void _initializeFormData() {
+    final args = Get.arguments;
+    if (args != null && args is Map<String, dynamic>) {
+      _isEditMode = args['isEdit'] ?? false;
+      final todo = args['todo'] as TodoModel?;
+
+      if (_isEditMode && todo != null) {
+        _editingTodo = todo;
+        _populateFormWithTodo(todo);
+      }
     }
-    return color;
+  }
+
+  void _populateFormWithTodo(TodoModel todo) {
+    _titleController.text = todo.title;
+    _descriptionController.text = todo.description ?? '';
+    _dueDate = todo.dueDate;
+    _priority = todo.priority;
+    _hasReminder = todo.hasReminder;
+    if (todo.reminderTime != null) {
+      _reminderTime = TimeOfDay.fromDateTime(todo.reminderTime!);
+    }
+    if (todo.tags != null) {
+      _tags = List<String>.from(todo.tags!);
+    }
   }
 
   @override
@@ -72,7 +93,7 @@ class _AddTodoViewState extends State<AddTodoView> {
               surface:
                   isDark
                       ? NeoBrutalismTheme.darkSurface
-                      : NeoBrutalismTheme.primaryWhite,
+                      : NeoBrutalismTheme.lightSurface,
               onSurface:
                   isDark
                       ? NeoBrutalismTheme.darkText
@@ -104,7 +125,7 @@ class _AddTodoViewState extends State<AddTodoView> {
               surface:
                   isDark
                       ? NeoBrutalismTheme.darkSurface
-                      : NeoBrutalismTheme.primaryWhite,
+                      : NeoBrutalismTheme.lightSurface,
               onSurface:
                   isDark
                       ? NeoBrutalismTheme.darkText
@@ -137,7 +158,10 @@ class _AddTodoViewState extends State<AddTodoView> {
       }
 
       final todo = TodoModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id:
+            _isEditMode
+                ? _editingTodo!.id
+                : DateTime.now().millisecondsSinceEpoch.toString(),
         title: _titleController.text,
         description:
             _descriptionController.text.isEmpty
@@ -146,21 +170,37 @@ class _AddTodoViewState extends State<AddTodoView> {
         dueDate: _dueDate,
         priority: _priority,
         tags: _tags.isEmpty ? null : _tags,
-        createdAt: DateTime.now(),
+        createdAt: _isEditMode ? _editingTodo!.createdAt : DateTime.now(),
         hasReminder: _hasReminder,
         reminderTime: reminderDateTime,
+        isCompleted: _isEditMode ? _editingTodo!.isCompleted : false,
       );
 
-      todoController.addTodo(todo);
-      Get.back();
-      Get.snackbar(
-        'Success',
-        'Todo added successfully!',
-        backgroundColor: NeoBrutalismTheme.accentGreen,
-        colorText: NeoBrutalismTheme.primaryBlack,
-        borderWidth: 3,
-        borderColor: NeoBrutalismTheme.primaryBlack,
-      );
+      if (_isEditMode) {
+        todoController.updateTodo(todo);
+        Get.back();
+        Get.snackbar(
+          'Success',
+          'Todo updated successfully!',
+          backgroundColor: NeoBrutalismTheme.accentBlue,
+          colorText: NeoBrutalismTheme.primaryBlack,
+          borderWidth: 3,
+          borderColor: NeoBrutalismTheme.primaryBlack,
+          duration: const Duration(seconds: 2),
+        );
+      } else {
+        todoController.addTodo(todo);
+        Get.back();
+        Get.snackbar(
+          'Success',
+          'Todo added successfully!',
+          backgroundColor: NeoBrutalismTheme.accentGreen,
+          colorText: NeoBrutalismTheme.primaryBlack,
+          borderWidth: 3,
+          borderColor: NeoBrutalismTheme.primaryBlack,
+          duration: const Duration(seconds: 2),
+        );
+      }
     }
   }
 
@@ -172,11 +212,11 @@ class _AddTodoViewState extends State<AddTodoView> {
       backgroundColor:
           isDark
               ? NeoBrutalismTheme.darkBackground
-              : NeoBrutalismTheme.primaryWhite,
+              : NeoBrutalismTheme.lightBackground,
       appBar: AppBar(
-        title: const Text(
-          'ADD TODO',
-          style: TextStyle(
+        title: Text(
+          _isEditMode ? 'EDIT TODO' : 'ADD TODO',
+          style: const TextStyle(
             fontWeight: FontWeight.w900,
             color: NeoBrutalismTheme.primaryBlack,
           ),
@@ -321,7 +361,7 @@ class _AddTodoViewState extends State<AddTodoView> {
                   ? _getThemedColor(color, isDark)
                   : (isDark
                       ? NeoBrutalismTheme.darkSurface
-                      : NeoBrutalismTheme.primaryWhite),
+                      : NeoBrutalismTheme.lightSurface),
           offset: isSelected ? 2 : 5,
           borderColor: NeoBrutalismTheme.primaryBlack,
         ),
@@ -351,7 +391,7 @@ class _AddTodoViewState extends State<AddTodoView> {
         color:
             isDark
                 ? NeoBrutalismTheme.darkSurface
-                : NeoBrutalismTheme.primaryWhite,
+                : NeoBrutalismTheme.lightSurface,
         borderColor: NeoBrutalismTheme.primaryBlack,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -406,7 +446,7 @@ class _AddTodoViewState extends State<AddTodoView> {
       color:
           isDark
               ? NeoBrutalismTheme.darkSurface
-              : NeoBrutalismTheme.primaryWhite,
+              : NeoBrutalismTheme.lightSurface,
       borderColor: NeoBrutalismTheme.primaryBlack,
       child: Column(
         children: [
@@ -556,7 +596,7 @@ class _AddTodoViewState extends State<AddTodoView> {
               backgroundColor:
                   isDark
                       ? NeoBrutalismTheme.darkSurface
-                      : NeoBrutalismTheme.primaryWhite,
+                      : NeoBrutalismTheme.lightSurface,
               side: const BorderSide(
                 color: NeoBrutalismTheme.primaryBlack,
                 width: 2,
@@ -570,11 +610,16 @@ class _AddTodoViewState extends State<AddTodoView> {
 
   Widget _buildSaveButton(bool isDark) {
     return NeoButton(
-      text: 'SAVE TODO',
+      text: _isEditMode ? 'UPDATE TODO' : 'SAVE TODO',
       onPressed: _saveTodo,
-      color: _getThemedColor(NeoBrutalismTheme.accentGreen, isDark),
+      color: _getThemedColor(
+        _isEditMode
+            ? NeoBrutalismTheme.accentBlue
+            : NeoBrutalismTheme.accentGreen,
+        isDark,
+      ),
       height: 64,
-      icon: Icons.save,
+      icon: _isEditMode ? Icons.update : Icons.save,
     );
   }
 
@@ -588,7 +633,7 @@ class _AddTodoViewState extends State<AddTodoView> {
           color:
               isDark
                   ? NeoBrutalismTheme.darkSurface
-                  : NeoBrutalismTheme.primaryWhite,
+                  : NeoBrutalismTheme.lightSurface,
           borderColor: NeoBrutalismTheme.primaryBlack,
         ),
         child: Column(
@@ -622,7 +667,7 @@ class _AddTodoViewState extends State<AddTodoView> {
                     color:
                         isDark
                             ? NeoBrutalismTheme.darkBackground
-                            : NeoBrutalismTheme.primaryWhite,
+                            : NeoBrutalismTheme.lightBackground,
                     textColor:
                         isDark
                             ? NeoBrutalismTheme.darkText

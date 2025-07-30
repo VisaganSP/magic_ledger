@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 
@@ -56,32 +57,105 @@ class TodoController extends GetxController {
 
     // Schedule reminder if needed
     if (todo.hasReminder && todo.reminderTime != null) {
-      await _notificationService.scheduleNotification(
-        id: todo.id.hashCode,
-        title: 'Todo Reminder',
-        body: todo.title,
-        scheduledDate: todo.reminderTime!,
-      );
+      try {
+        await _notificationService.scheduleNotification(
+          id: todo.id.hashCode,
+          title: 'Todo Reminder',
+          body: todo.title,
+          scheduledDate: todo.reminderTime!,
+        );
+      } catch (e) {
+        print('Error scheduling notification: $e');
+        // Don't show error - the notification service handles it
+      }
     }
 
     loadTodos();
   }
 
-  Future<void> updateTodo(TodoModel todo) async {
-    await todo.save();
-    loadTodos();
+  Future<void> updateTodo(TodoModel updatedTodo) async {
+    try {
+      // Get the actual todo from the box (not the copy)
+      final existingTodo = _todoBox.get(updatedTodo.id);
+
+      if (existingTodo == null) {
+        throw Exception('Todo not found in box');
+      }
+
+      // Update the properties of the existing todo
+      existingTodo.title = updatedTodo.title;
+      existingTodo.description = updatedTodo.description;
+      existingTodo.priority = updatedTodo.priority;
+      existingTodo.dueDate = updatedTodo.dueDate;
+      existingTodo.tags = updatedTodo.tags;
+      existingTodo.hasReminder = updatedTodo.hasReminder;
+      existingTodo.reminderTime = updatedTodo.reminderTime;
+      existingTodo.isCompleted = updatedTodo.isCompleted;
+
+      // Save the existing todo (which is in the box)
+      await existingTodo.save();
+
+      // Schedule or cancel notification as needed
+      if (existingTodo.hasReminder && existingTodo.reminderTime != null) {
+        try {
+          await _notificationService.scheduleNotification(
+            id: existingTodo.id.hashCode,
+            title: 'Todo Reminder',
+            body: existingTodo.title,
+            scheduledDate: existingTodo.reminderTime!,
+          );
+        } catch (e) {
+          print('Error scheduling notification: $e');
+          // Don't show error - the notification service handles it
+        }
+      } else {
+        await _notificationService.cancelNotification(existingTodo.id.hashCode);
+      }
+
+      loadTodos();
+    } catch (e) {
+      print('Error updating todo: $e');
+      if (!e.toString().contains('exact_alarms_not_permitted')) {
+        Get.snackbar(
+          'Error',
+          'Failed to update todo',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    }
   }
 
   Future<void> toggleTodo(TodoModel todo) async {
-    todo.isCompleted = !todo.isCompleted;
-    await todo.save();
+    try {
+      // Get the actual todo from the box
+      final existingTodo = _todoBox.get(todo.id);
 
-    // Cancel reminder if completed
-    if (todo.isCompleted && todo.hasReminder) {
-      await _notificationService.cancelNotification(todo.id.hashCode);
+      if (existingTodo == null) {
+        throw Exception('Todo not found in box');
+      }
+
+      // Toggle the completion status
+      existingTodo.isCompleted = !existingTodo.isCompleted;
+
+      // Save the change
+      await existingTodo.save();
+
+      // Cancel reminder if completed
+      if (existingTodo.isCompleted && existingTodo.hasReminder) {
+        await _notificationService.cancelNotification(existingTodo.id.hashCode);
+      }
+
+      loadTodos();
+    } catch (e) {
+      print('Error toggling todo: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to update todo status',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
-
-    loadTodos();
   }
 
   Future<void> deleteTodo(String id) async {
@@ -108,37 +182,61 @@ class TodoController extends GetxController {
   }
 
   Future<void> updateTodoDueDate(TodoModel todo, DateTime newDate) async {
-    // Cancel old reminder if exists
-    if (todo.hasReminder && todo.reminderTime != null) {
-      await _notificationService.cancelNotification(todo.id.hashCode);
+    try {
+      // Get the actual todo from the box
+      final existingTodo = _todoBox.get(todo.id);
+
+      if (existingTodo == null) {
+        throw Exception('Todo not found in box');
+      }
+
+      // Cancel old reminder if exists
+      if (existingTodo.hasReminder && existingTodo.reminderTime != null) {
+        await _notificationService.cancelNotification(existingTodo.id.hashCode);
+      }
+
+      // Update due date
+      existingTodo.dueDate = newDate;
+
+      // Update reminder time if todo has reminder
+      if (existingTodo.hasReminder && existingTodo.reminderTime != null) {
+        // Keep the same time but update the date
+        final oldTime = existingTodo.reminderTime!;
+        existingTodo.reminderTime = DateTime(
+          newDate.year,
+          newDate.month,
+          newDate.day,
+          oldTime.hour,
+          oldTime.minute,
+        );
+
+        // Schedule new reminder
+        try {
+          await _notificationService.scheduleNotification(
+            id: existingTodo.id.hashCode,
+            title: 'Todo Reminder',
+            body: existingTodo.title,
+            scheduledDate: existingTodo.reminderTime!,
+          );
+        } catch (e) {
+          print('Error scheduling notification: $e');
+          // Don't show error - the notification service handles it
+        }
+      }
+
+      await existingTodo.save();
+      loadTodos();
+    } catch (e) {
+      print('Error updating todo due date: $e');
+      if (!e.toString().contains('exact_alarms_not_permitted')) {
+        Get.snackbar(
+          'Error',
+          'Failed to update due date',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
     }
-
-    // Update due date
-    todo.dueDate = newDate;
-
-    // Update reminder time if todo has reminder
-    if (todo.hasReminder && todo.reminderTime != null) {
-      // Keep the same time but update the date
-      final oldTime = todo.reminderTime!;
-      todo.reminderTime = DateTime(
-        newDate.year,
-        newDate.month,
-        newDate.day,
-        oldTime.hour,
-        oldTime.minute,
-      );
-
-      // Schedule new reminder
-      await _notificationService.scheduleNotification(
-        id: todo.id.hashCode,
-        title: 'Todo Reminder',
-        body: todo.title,
-        scheduledDate: todo.reminderTime!,
-      );
-    }
-
-    await todo.save();
-    loadTodos();
   }
 
   List<TodoModel> getFilteredTodos() {

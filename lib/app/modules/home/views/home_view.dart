@@ -19,6 +19,13 @@ class HomeView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (controller.selectedIndex.value == 0) {
+        // Only refresh if on home tab
+        controller.refreshStats();
+      }
+    });
+
     final categoryController = Get.find<CategoryController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -26,7 +33,7 @@ class HomeView extends GetView<HomeController> {
       backgroundColor:
           isDark
               ? NeoBrutalismTheme.darkBackground
-              : NeoBrutalismTheme.primaryWhite,
+              : NeoBrutalismTheme.lightBackground,
       body: Stack(
         children: [
           Column(
@@ -945,46 +952,66 @@ class HomeView extends GetView<HomeController> {
     return NeoCard(
       color: bgColor,
       borderColor: NeoBrutalismTheme.primaryBlack,
+      onTap: () => Get.toNamed('/todo-detail', arguments: todo),
       child: Row(
         children: [
-          Checkbox(
-            value: todo.isCompleted,
-            onChanged: (value) {
-              todo.isCompleted = value ?? false;
-              todo.save();
-              controller.todoController.loadTodos();
+          GestureDetector(
+            onTap: () async {
+              // Use the TodoController's toggleTodo method
+              await controller.todoController.toggleTodo(todo);
+              // Refresh the home controller stats
               controller.calculateStats();
             },
-            activeColor: NeoBrutalismTheme.primaryBlack,
-            checkColor: NeoBrutalismTheme.primaryWhite,
-            side: BorderSide(color: textColor, width: 2),
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color:
+                    todo.isCompleted
+                        ? NeoBrutalismTheme.primaryBlack
+                        : Colors.transparent,
+                border: Border.all(color: textColor, width: 2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child:
+                  todo.isCompleted
+                      ? Icon(
+                        Icons.check,
+                        size: 16,
+                        color: NeoBrutalismTheme.primaryWhite,
+                      )
+                      : null,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  todo.title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                    decoration:
-                        todo.isCompleted ? TextDecoration.lineThrough : null,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (todo.dueDate != null)
+            child: GestureDetector(
+              onTap: () => Get.toNamed('/todo-detail', arguments: todo),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    'Due: ${todo.dueDate!.day}/${todo.dueDate!.month}',
+                    todo.title,
                     style: TextStyle(
-                      fontSize: 14,
-                      color: textColor.withOpacity(0.8),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                      decoration:
+                          todo.isCompleted ? TextDecoration.lineThrough : null,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-              ],
+                  if (todo.dueDate != null)
+                    Text(
+                      'Due: ${todo.dueDate!.day}/${todo.dueDate!.month}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: textColor.withOpacity(0.8),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -1023,7 +1050,7 @@ class HomeView extends GetView<HomeController> {
     if (backgroundColor == NeoBrutalismTheme.primaryWhite) {
       return NeoBrutalismTheme.primaryBlack;
     }
-    return NeoBrutalismTheme.primaryWhite;
+    return NeoBrutalismTheme.primaryBlack;
   }
 
   String _getPriorityLabel(int priority) {

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../data/models/expense_model.dart';
@@ -27,6 +26,10 @@ class AnalyticsController extends GetxController {
   final RxDouble monthlyAverage = 0.0.obs;
   final RxMap<String, double> monthlyTotals = <String, double>{}.obs;
 
+  // Add custom date range properties
+  final Rx<DateTime?> customStartDate = Rx<DateTime?>(null);
+  final Rx<DateTime?> customEndDate = Rx<DateTime?>(null);
+
   @override
   void onInit() {
     super.onInit();
@@ -40,9 +43,22 @@ class AnalyticsController extends GetxController {
 
   void changePeriod(String period) {
     selectedPeriod.value = period;
-    if (period == 'Custom') {
-      _showCustomDatePicker();
+
+    // Reset custom dates when selecting other periods
+    if (period != 'Custom') {
+      customStartDate.value = null;
+      customEndDate.value = null;
     }
+
+    updateAnalytics();
+  }
+
+  // Add method to handle custom date range
+  void setCustomDateRange(DateTime start, DateTime end) {
+    customStartDate.value = start;
+    customEndDate.value = end;
+    selectedPeriod.value = 'Custom';
+    updateAnalytics();
   }
 
   void updateAnalytics() {
@@ -128,8 +144,14 @@ class AnalyticsController extends GetxController {
         start = DateTime(now.year, 1, 1);
         break;
       case 'Custom':
-        // Custom date range logic would be handled by date picker
-        start = DateTime(now.year, now.month, 1);
+        // Use custom dates if available
+        if (customStartDate.value != null && customEndDate.value != null) {
+          start = customStartDate.value!;
+          end = customEndDate.value!;
+        } else {
+          // Fallback to this month if custom dates not set
+          start = DateTime(now.year, now.month, 1);
+        }
         break;
       default:
         start = DateTime(now.year, now.month, 1);
@@ -154,6 +176,7 @@ class AnalyticsController extends GetxController {
       );
       final category = categoryController.categories.firstWhere(
         (c) => c.id == mostSpentEntry.key,
+        orElse: () => categoryController.categories.first,
       );
       mostSpentCategory.value = category.name;
     }
@@ -163,6 +186,7 @@ class AnalyticsController extends GetxController {
         categoryTotals.entries.map((entry) {
             final category = categoryController.categories.firstWhere(
               (c) => c.id == entry.key,
+              orElse: () => categoryController.categories.first,
             );
             final percentage =
                 totalSpent.value > 0
@@ -240,6 +264,7 @@ class AnalyticsController extends GetxController {
         trendData.add(weekExpenses);
 
         current = current.add(const Duration(days: 7));
+        if (current.isAfter(end)) break;
       }
     } else {
       // Group by day for short periods
@@ -299,65 +324,6 @@ class AnalyticsController extends GetxController {
     return ((daysSinceFirstDay + firstDayOfYear.weekday - 1) / 7).ceil();
   }
 
-  void _showCustomDatePicker() async {
-    final DateTimeRange? picked = await showDateRangePicker(
-      context: Get.context!,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      initialDateRange: DateTimeRange(
-        start: DateTime.now().subtract(const Duration(days: 30)),
-        end: DateTime.now(),
-      ),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Colors.black,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      // Handle custom date range
-      final start = picked.start;
-      final end = picked.end;
-
-      // Update analytics with custom range
-      final filteredExpenses = expenseController.getExpensesByDateRange(
-        start,
-        end,
-      );
-
-      // Recalculate all analytics with custom range
-      if (filteredExpenses.isNotEmpty) {
-        totalSpent.value = filteredExpenses.fold(
-          0.0,
-          (sum, expense) => sum + expense.amount,
-        );
-
-        final days = end.difference(start).inDays + 1;
-        avgDailySpent.value = days > 0 ? totalSpent.value / days : 0;
-
-        _updateCategoryData(filteredExpenses);
-        _updateTrendData(start, end);
-
-        topExpenses.value =
-            List.from(filteredExpenses)
-              ..sort((a, b) => b.amount.compareTo(a.amount))
-              ..take(5).toList();
-      }
-    } else {
-      // If cancelled, revert to previous period
-      selectedPeriod.value = 'This Month';
-    }
-  }
-
   // Getters for additional analytics
   double get savingsRate {
     // This would need budget data to calculate properly
@@ -372,6 +338,7 @@ class AnalyticsController extends GetxController {
       final spent = categoryDataItem['amount'] as double;
       final category = categoryController.categories.firstWhere(
         (c) => c.id == categoryId,
+        orElse: () => categoryController.categories.first,
       );
 
       if (category.budget != null && category.budget! > 0) {
@@ -388,5 +355,15 @@ class AnalyticsController extends GetxController {
         .getExpensesByDateRange(dateRange['start']!, dateRange['end']!)
         .where((e) => e.categoryId == categoryId)
         .toList();
+  }
+
+  // Method to get formatted date range string for display
+  String getDateRangeString() {
+    if (selectedPeriod.value == 'Custom' &&
+        customStartDate.value != null &&
+        customEndDate.value != null) {
+      return '${customStartDate.value!.day}/${customStartDate.value!.month}/${customStartDate.value!.year} - ${customEndDate.value!.day}/${customEndDate.value!.month}/${customEndDate.value!.year}';
+    }
+    return selectedPeriod.value;
   }
 }

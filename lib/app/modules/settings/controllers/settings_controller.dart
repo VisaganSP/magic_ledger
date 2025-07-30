@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 
+import '../../../data/providers/hive_provider.dart';
+import '../../expense/controllers/expense_controller.dart';
+import '../../home/controllers/home_controller.dart';
+import '../../income/controllers/income_controller.dart';
+import '../../todo/controllers/todo_controller.dart';
+
 class SettingsController extends GetxController {
   final Box _settingsBox = Hive.box('settings');
 
@@ -23,10 +29,21 @@ class SettingsController extends GetxController {
       'enableNotifications',
       defaultValue: true,
     );
-    enableDarkMode.value = _settingsBox.get(
-      'enableDarkMode',
-      defaultValue: false,
-    );
+
+    // Only load dark mode setting if it exists
+    // Don't set a default - let the app use system theme
+    if (_settingsBox.containsKey('enableDarkMode')) {
+      enableDarkMode.value = _settingsBox.get('enableDarkMode');
+      // Only apply theme if user has explicitly set it
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _updateTheme();
+      });
+    } else {
+      // If no preference saved, check current theme mode
+      final brightness = WidgetsBinding.instance.window.platformBrightness;
+      enableDarkMode.value = brightness == Brightness.dark;
+    }
+
     backupFrequency.value = _settingsBox.get(
       'backupFrequency',
       defaultValue: 'weekly',
@@ -35,11 +52,6 @@ class SettingsController extends GetxController {
       'enableBiometric',
       defaultValue: false,
     );
-
-    // Apply theme after the current frame to avoid setState during build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updateTheme();
-    });
   }
 
   Future<void> updateCurrency(String value) async {
@@ -95,9 +107,13 @@ class SettingsController extends GetxController {
   }
 
   void _updateTheme() {
-    Get.changeThemeMode(
-      enableDarkMode.value ? ThemeMode.dark : ThemeMode.light,
-    );
+    // Only change theme if user has set a preference
+    if (_settingsBox.containsKey('enableDarkMode')) {
+      Get.changeThemeMode(
+        enableDarkMode.value ? ThemeMode.dark : ThemeMode.light,
+      );
+    }
+    // Otherwise, let it use system theme
   }
 
   Future<void> updateBackupFrequency(String value) async {
@@ -112,16 +128,84 @@ class SettingsController extends GetxController {
 
   Future<void> clearAllData() async {
     try {
-      await Hive.box('expenses').clear();
-      await Hive.box('todos').clear();
-      await Hive.box('budgets').clear();
-      await Hive.box('receipts').clear();
-      await Hive.box('income').clear();
-      // Don't clear categories and settings
+      // Show loading indicator
+      Get.dialog(
+        const Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
+
+      // First, clear the data in memory from all controllers
+      try {
+        if (Get.isRegistered<ExpenseController>()) {
+          final expenseController = Get.find<ExpenseController>();
+          expenseController.expenses.clear();
+        }
+      } catch (_) {}
+
+      try {
+        if (Get.isRegistered<TodoController>()) {
+          final todoController = Get.find<TodoController>();
+          todoController.todos.clear();
+        }
+      } catch (_) {}
+
+      try {
+        if (Get.isRegistered<IncomeController>()) {
+          final incomeController = Get.find<IncomeController>();
+          incomeController.incomes.clear();
+        }
+      } catch (_) {}
+
+      // Clear the Hive boxes
+      await HiveProvider.clearAllData();
+
+      // Reset home controller stats
+      try {
+        if (Get.isRegistered<HomeController>()) {
+          final homeController = Get.find<HomeController>();
+          homeController.totalExpensesThisMonth.value = 0.0;
+          homeController.totalIncomeThisMonth.value = 0.0;
+          homeController.pendingTodos.value = 0;
+          homeController.savingsPercentage.value = 0.0;
+          homeController.pendingTodos.value = 0;
+        }
+      } catch (_) {}
+
+      // Wait a bit to ensure everything is cleared
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      // Close loading dialog
+      Get.back();
+
+      // Force delete all controller instances
+      Get.deleteAll(force: true);
+
+      // Navigate to home with a fresh start
+      Get.offAllNamed('/home');
+
+      // Show success message after navigation
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      Get.snackbar(
+        'Success',
+        'All data has been cleared',
+        backgroundColor: const Color(
+          0xFF6BFF6B,
+        ), // NeoBrutalismTheme.accentGreen
+        colorText: Colors.black,
+        borderWidth: 3,
+        borderColor: Colors.black,
+        duration: const Duration(seconds: 3),
+      );
     } catch (e) {
+      // Close loading dialog if still open
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+
       Get.snackbar(
         'Error',
-        'Failed to clear data: $e',
+        'Failed to clear data: ${e.toString()}',
         backgroundColor: Colors.red,
         colorText: Colors.white,
         borderWidth: 3,

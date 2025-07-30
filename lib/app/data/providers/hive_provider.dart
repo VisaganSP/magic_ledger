@@ -58,17 +58,20 @@ class HiveProvider {
   }
 
   static Future<void> clearAllData() async {
-    final boxes = [
-      expenseBoxName,
-      todoBoxName,
-      budgetBoxName,
-      receiptBoxName,
-      incomeBoxName, // Added income box to clear data
-    ];
+    // Use the already opened typed boxes instead of trying to reopen them
+    try {
+      // Clear typed boxes using the getter methods
+      await getExpenseBox().clear();
+      await getTodoBox().clear();
+      await getBudgetBox().clear();
+      await getReceiptBox().clear();
+      await getIncomeBox().clear();
 
-    for (final boxName in boxes) {
-      final box = await Hive.openBox(boxName);
-      await box.clear();
+      // Don't clear categories and settings as per the original comment
+      // await getCategoryBox().clear();
+    } catch (e) {
+      print('Error clearing data: $e');
+      throw e;
     }
   }
 

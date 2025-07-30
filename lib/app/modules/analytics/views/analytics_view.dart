@@ -7,6 +7,7 @@ import '../../../data/services/pdf_service.dart';
 import '../../../theme/neo_brutalism_theme.dart';
 import '../../../widgets/neo_button.dart';
 import '../../../widgets/neo_card.dart';
+import '../../../widgets/neo_date_range_picker.dart';
 import '../controllers/analytics_controller.dart';
 
 class AnalyticsView extends GetView<AnalyticsController> {
@@ -26,7 +27,7 @@ class AnalyticsView extends GetView<AnalyticsController> {
         children: [
           _buildHeader(isDark),
           const SizedBox(height: 24),
-          _buildDateRangeSelector(isDark),
+          _buildDateRangeSelector(isDark, context),
           const SizedBox(height: 24),
           _buildTotalStats(isDark),
           const SizedBox(height: 24),
@@ -64,41 +65,100 @@ class AnalyticsView extends GetView<AnalyticsController> {
   }
 
   Widget _buildHeader(bool isDark) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'ANALYTICS',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w900,
-            color:
-                isDark
-                    ? NeoBrutalismTheme.darkText
-                    : NeoBrutalismTheme.primaryBlack,
-          ),
-        ),
-        Obx(
-          () => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: NeoBrutalismTheme.neoBox(
-              color: _getThemedColor(NeoBrutalismTheme.accentBlue, isDark),
-              borderColor: NeoBrutalismTheme.primaryBlack,
-            ),
-            child: Text(
-              controller.selectedPeriod.value.toUpperCase(),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: NeoBrutalismTheme.primaryBlack,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'ANALYTICS',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                color:
+                    isDark
+                        ? NeoBrutalismTheme.darkText
+                        : NeoBrutalismTheme.primaryBlack,
               ),
             ),
-          ),
+            Obx(
+              () => Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: NeoBrutalismTheme.neoBox(
+                  color: _getThemedColor(NeoBrutalismTheme.accentBlue, isDark),
+                  borderColor: NeoBrutalismTheme.primaryBlack,
+                ),
+                child: Text(
+                  controller.selectedPeriod.value.toUpperCase(),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: NeoBrutalismTheme.primaryBlack,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
+        // Add custom date range display if selected
+        Obx(() {
+          if (controller.selectedPeriod.value == 'Custom' &&
+              controller.customStartDate.value != null &&
+              controller.customEndDate.value != null) {
+            return Container(
+              margin: const EdgeInsets.only(top: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: NeoBrutalismTheme.neoBox(
+                color: _getThemedColor(NeoBrutalismTheme.accentBlue, isDark),
+                borderColor: NeoBrutalismTheme.primaryBlack,
+                offset: 2,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.date_range,
+                    size: 20,
+                    color: NeoBrutalismTheme.primaryBlack,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${controller.customStartDate.value!.day}/${controller.customStartDate.value!.month}/${controller.customStartDate.value!.year} - ${controller.customEndDate.value!.day}/${controller.customEndDate.value!.month}/${controller.customEndDate.value!.year}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: NeoBrutalismTheme.primaryBlack,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.close,
+                      size: 20,
+                      color: NeoBrutalismTheme.primaryBlack,
+                    ),
+                    onPressed: () {
+                      controller.customStartDate.value = null;
+                      controller.customEndDate.value = null;
+                      controller.changePeriod('This Month');
+                    },
+                    constraints: BoxConstraints(),
+                    padding: EdgeInsets.zero,
+                  ),
+                ],
+              ),
+            ).animate().fadeIn().slideY(begin: -0.5, end: 0);
+          }
+          return const SizedBox.shrink();
+        }),
       ],
     ).animate().fadeIn().slideX(begin: -0.2, end: 0);
   }
 
-  Widget _buildDateRangeSelector(bool isDark) {
+  Widget _buildDateRangeSelector(bool isDark, BuildContext context) {
     return NeoCard(
       color:
           isDark
@@ -124,12 +184,12 @@ class AnalyticsView extends GetView<AnalyticsController> {
             spacing: 12,
             runSpacing: 12,
             children: [
-              _buildPeriodChip('This Week', isDark),
-              _buildPeriodChip('This Month', isDark),
-              _buildPeriodChip('3 Months', isDark),
-              _buildPeriodChip('6 Months', isDark),
-              _buildPeriodChip('This Year', isDark),
-              _buildPeriodChip('Custom', isDark),
+              _buildPeriodChip('This Week', isDark, context),
+              _buildPeriodChip('This Month', isDark, context),
+              _buildPeriodChip('3 Months', isDark, context),
+              _buildPeriodChip('6 Months', isDark, context),
+              _buildPeriodChip('This Year', isDark, context),
+              _buildPeriodChip('Custom', isDark, context),
             ],
           ),
         ],
@@ -137,11 +197,32 @@ class AnalyticsView extends GetView<AnalyticsController> {
     ).animate().fadeIn(delay: 200.ms);
   }
 
-  Widget _buildPeriodChip(String period, bool isDark) {
+  Widget _buildPeriodChip(String period, bool isDark, BuildContext context) {
     return Obx(() {
       final isSelected = controller.selectedPeriod.value == period;
       return GestureDetector(
-        onTap: () => controller.changePeriod(period),
+        onTap: () {
+          if (period == 'Custom') {
+            // Show date range picker
+            showDialog(
+              context: context,
+              builder:
+                  (context) => NeoDateRangePicker(
+                    initialStartDate: controller.customStartDate.value,
+                    initialEndDate: controller.customEndDate.value,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime.now().add(Duration(days: 365)),
+                    onDateRangeSelected: (start, end) {
+                      if (start != null && end != null) {
+                        controller.setCustomDateRange(start, end);
+                      }
+                    },
+                  ),
+            );
+          } else {
+            controller.changePeriod(period);
+          }
+        },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -155,18 +236,37 @@ class AnalyticsView extends GetView<AnalyticsController> {
             offset: isSelected ? 2 : 5,
             borderColor: NeoBrutalismTheme.primaryBlack,
           ),
-          child: Text(
-            period.toUpperCase(),
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-              color:
-                  isSelected
-                      ? NeoBrutalismTheme.primaryBlack
-                      : (isDark
-                          ? NeoBrutalismTheme.darkText
-                          : NeoBrutalismTheme.primaryBlack),
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (period == 'Custom')
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Icon(
+                    Icons.date_range,
+                    size: 16,
+                    color:
+                        isSelected
+                            ? NeoBrutalismTheme.primaryBlack
+                            : (isDark
+                                ? NeoBrutalismTheme.darkText
+                                : NeoBrutalismTheme.primaryBlack),
+                  ),
+                ),
+              Text(
+                period.toUpperCase(),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color:
+                      isSelected
+                          ? NeoBrutalismTheme.primaryBlack
+                          : (isDark
+                              ? NeoBrutalismTheme.darkText
+                              : NeoBrutalismTheme.primaryBlack),
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -180,7 +280,7 @@ class AnalyticsView extends GetView<AnalyticsController> {
           Expanded(
             child: _buildStatCard(
               'TOTAL SPENT',
-              '\$${controller.totalSpent.value.toStringAsFixed(2)}',
+              '₹${controller.totalSpent.value.toStringAsFixed(2)}',
               _getThemedColor(NeoBrutalismTheme.accentOrange, isDark),
               Icons.payments,
               isDark,
@@ -190,7 +290,7 @@ class AnalyticsView extends GetView<AnalyticsController> {
           Expanded(
             child: _buildStatCard(
               'AVG DAILY',
-              '\$${controller.avgDailySpent.value.toStringAsFixed(2)}',
+              '₹${controller.avgDailySpent.value.toStringAsFixed(2)}',
               _getThemedColor(NeoBrutalismTheme.accentGreen, isDark),
               Icons.today,
               isDark,
@@ -344,7 +444,7 @@ class AnalyticsView extends GetView<AnalyticsController> {
                       ),
                     ),
                     Text(
-                      '\$${amount.toStringAsFixed(2)}',
+                      '₹${amount.toStringAsFixed(2)}',
                       style: TextStyle(
                         fontWeight: FontWeight.w900,
                         color:
@@ -430,7 +530,7 @@ class AnalyticsView extends GetView<AnalyticsController> {
                         reservedSize: 40,
                         getTitlesWidget: (value, meta) {
                           return Text(
-                            '\$${value.toInt()}',
+                            '₹${value.toInt()}',
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -580,7 +680,7 @@ class AnalyticsView extends GetView<AnalyticsController> {
                             ),
                           ),
                           Text(
-                            '\$${expense.amount.toStringAsFixed(2)}',
+                            '₹${expense.amount.toStringAsFixed(2)}',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w900,

@@ -17,7 +17,7 @@ class PdfService {
 
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
   final DateFormat _monthFormat = DateFormat('MMMM yyyy');
-  final NumberFormat _currencyFormat = NumberFormat.currency(symbol: '\$');
+  final NumberFormat _currencyFormat = NumberFormat.currency(symbol: '₹');
 
   // Neo Brutalism Color Palette
   static const PdfColor primaryYellow = PdfColor.fromInt(0xFFFFE066);
@@ -192,7 +192,7 @@ class PdfService {
                   'PENDING TASKS',
                   pendingTodos,
                   primaryOrange,
-                  '⏳',
+                  'PENDING',
                 ),
                 pw.SizedBox(height: 24),
               ],
@@ -203,7 +203,7 @@ class PdfService {
                   'OVERDUE TASKS',
                   overdueTodos,
                   primaryRed,
-                  '🚨',
+                  'OVERDUE',
                 ),
                 pw.SizedBox(height: 24),
               ],
@@ -214,7 +214,7 @@ class PdfService {
                   'COMPLETED TASKS',
                   completedTodos,
                   primaryGreen,
-                  '✅',
+                  'DONE',
                 ),
               ],
               pw.SizedBox(height: 40),
@@ -298,7 +298,7 @@ class PdfService {
                     ),
                     color: primaryYellow,
                     child: pw.Text(
-                      '✨ MAGIC',
+                      'MAGIC',
                       style: pw.TextStyle(
                         font: boldFont,
                         fontSize: 16,
@@ -382,7 +382,7 @@ class PdfService {
           'TOTAL SPENT',
           _currencyFormat.format(total),
           primaryPink,
-          '💰',
+          'TOTAL',
         ),
         _buildBrutalistSummaryCard(
           boldFont,
@@ -390,7 +390,7 @@ class PdfService {
           'TRANSACTIONS',
           count.toString(),
           primaryBlue,
-          '📊',
+          'COUNT',
         ),
         _buildBrutalistSummaryCard(
           boldFont,
@@ -398,7 +398,7 @@ class PdfService {
           'AVG EXPENSE',
           _currencyFormat.format(average),
           primaryGreen,
-          '📈',
+          'AVG',
         ),
       ],
     );
@@ -410,7 +410,7 @@ class PdfService {
     String label,
     String value,
     PdfColor color,
-    String emoji,
+    String badge,
   ) {
     return pw.Container(
       width: 160,
@@ -435,8 +435,28 @@ class PdfService {
             child: pw.Column(
               mainAxisAlignment: pw.MainAxisAlignment.center,
               children: [
-                pw.Text(emoji, style: pw.TextStyle(fontSize: 20)),
-                pw.SizedBox(height: 4),
+                pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.black,
+                    borderRadius: const pw.BorderRadius.all(
+                      pw.Radius.circular(2),
+                    ),
+                  ),
+                  child: pw.Text(
+                    badge,
+                    style: pw.TextStyle(
+                      font: boldFont,
+                      fontSize: 8,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.white,
+                    ),
+                  ),
+                ),
+                pw.SizedBox(height: 8),
                 pw.Text(
                   label,
                   style: pw.TextStyle(
@@ -497,7 +517,24 @@ class PdfService {
               children: [
                 pw.Row(
                   children: [
-                    pw.Text('📊', style: pw.TextStyle(fontSize: 24)),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.all(4),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.black,
+                        borderRadius: const pw.BorderRadius.all(
+                          pw.Radius.circular(2),
+                        ),
+                      ),
+                      child: pw.Text(
+                        'CAT',
+                        style: pw.TextStyle(
+                          font: boldFont,
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.white,
+                        ),
+                      ),
+                    ),
                     pw.SizedBox(width: 12),
                     pw.Text(
                       'CATEGORY BREAKDOWN',
@@ -639,7 +676,24 @@ class PdfService {
               children: [
                 pw.Row(
                   children: [
-                    pw.Text('📈', style: pw.TextStyle(fontSize: 24)),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.all(4),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.black,
+                        borderRadius: const pw.BorderRadius.all(
+                          pw.Radius.circular(2),
+                        ),
+                      ),
+                      child: pw.Text(
+                        'TREND',
+                        style: pw.TextStyle(
+                          font: boldFont,
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.white,
+                        ),
+                      ),
+                    ),
                     pw.SizedBox(width: 12),
                     pw.Text(
                       'MONTHLY SPENDING TREND',
@@ -770,7 +824,24 @@ class PdfService {
                   color: primaryOrange,
                   child: pw.Row(
                     children: [
-                      pw.Text('🏆', style: pw.TextStyle(fontSize: 24)),
+                      pw.Container(
+                        padding: const pw.EdgeInsets.all(4),
+                        decoration: pw.BoxDecoration(
+                          color: PdfColors.black,
+                          borderRadius: const pw.BorderRadius.all(
+                            pw.Radius.circular(2),
+                          ),
+                        ),
+                        child: pw.Text(
+                          'TOP',
+                          style: pw.TextStyle(
+                            font: boldFont,
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.white,
+                          ),
+                        ),
+                      ),
                       pw.SizedBox(width: 12),
                       pw.Text(
                         'TOP EXPENSES',
@@ -802,6 +873,7 @@ class PdfService {
                       final expense = entry.value;
                       final category = categories.firstWhere(
                         (c) => c.id == expense.categoryId,
+                        orElse: () => categories.first,
                       );
                       final rowColor =
                           index % 2 == 0 ? lightBg : PdfColors.white;
@@ -879,7 +951,24 @@ class PdfService {
               children: [
                 pw.Row(
                   children: [
-                    pw.Text('💡', style: pw.TextStyle(fontSize: 24)),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.all(4),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.black,
+                        borderRadius: const pw.BorderRadius.all(
+                          pw.Radius.circular(2),
+                        ),
+                      ),
+                      child: pw.Text(
+                        'INFO',
+                        style: pw.TextStyle(
+                          font: boldFont,
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.white,
+                        ),
+                      ),
+                    ),
                     pw.SizedBox(width: 12),
                     pw.Text(
                       'KEY INSIGHTS',
@@ -899,7 +988,7 @@ class PdfService {
                       _buildBrutalistInsightBubble(
                         boldFont,
                         regularFont,
-                        '🎯 HIGHEST EXPENSE',
+                        'HIGHEST EXPENSE',
                         '${highestExpense.title} • ${_currencyFormat.format(highestExpense.amount)}',
                         primaryPink,
                       ),
@@ -907,7 +996,7 @@ class PdfService {
                     _buildBrutalistInsightBubble(
                       boldFont,
                       regularFont,
-                      '📊 TOP CATEGORY',
+                      'TOP CATEGORY',
                       mostFrequentCategory,
                       primaryBlue,
                     ),
@@ -915,7 +1004,7 @@ class PdfService {
                     _buildBrutalistInsightBubble(
                       boldFont,
                       regularFont,
-                      '📅 DAILY AVERAGE',
+                      'DAILY AVERAGE',
                       _currencyFormat.format(avgDailySpend),
                       primaryGreen,
                     ),
@@ -1008,7 +1097,7 @@ class PdfService {
                         ),
                         color: primaryYellow,
                         child: pw.Text(
-                          '✨ MAGIC',
+                          'MAGIC',
                           style: pw.TextStyle(
                             font: boldFont,
                             fontSize: 18,
@@ -1117,7 +1206,7 @@ class PdfService {
                   boldFont,
                   regularFont,
                   'Category',
-                  '${category.icon} ${category.name}',
+                  category.name,
                   primaryPink,
                 ),
                 if (expense.location != null) ...[
@@ -1228,7 +1317,7 @@ class PdfService {
       child: pw.Column(
         children: [
           pw.Text(
-            '🌟 Thank you for using Magic Ledger! 🌟',
+            'Thank you for using Magic Ledger!',
             style: pw.TextStyle(
               font: regularFont,
               fontSize: 14,
@@ -1268,7 +1357,7 @@ class PdfService {
           'TOTAL',
           total.toString(),
           primaryBlue,
-          '📝',
+          'ALL',
         ),
         _buildBrutalistSummaryCard(
           boldFont,
@@ -1276,7 +1365,7 @@ class PdfService {
           'COMPLETED',
           completed.toString(),
           primaryGreen,
-          '✅',
+          'DONE',
         ),
         _buildBrutalistSummaryCard(
           boldFont,
@@ -1284,7 +1373,7 @@ class PdfService {
           'PENDING',
           pending.toString(),
           primaryOrange,
-          '⏳',
+          'WAIT',
         ),
         _buildBrutalistSummaryCard(
           boldFont,
@@ -1292,7 +1381,7 @@ class PdfService {
           'OVERDUE',
           overdue.toString(),
           primaryRed,
-          '🚨',
+          'LATE',
         ),
       ],
     );
@@ -1304,7 +1393,7 @@ class PdfService {
     String title,
     List<TodoModel> todos,
     PdfColor color,
-    String emoji,
+    String badge,
   ) {
     return pw.Container(
       child: pw.Stack(
@@ -1333,7 +1422,27 @@ class PdfService {
                   color: color,
                   child: pw.Row(
                     children: [
-                      pw.Text(emoji, style: pw.TextStyle(fontSize: 20)),
+                      pw.Container(
+                        padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: pw.BoxDecoration(
+                          color: PdfColors.black,
+                          borderRadius: const pw.BorderRadius.all(
+                            pw.Radius.circular(2),
+                          ),
+                        ),
+                        child: pw.Text(
+                          badge,
+                          style: pw.TextStyle(
+                            font: boldFont,
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.white,
+                          ),
+                        ),
+                      ),
                       pw.SizedBox(width: 12),
                       pw.Text(
                         title,
@@ -1384,7 +1493,7 @@ class PdfService {
                                           todo.isCompleted
                                               ? pw.Center(
                                                 child: pw.Text(
-                                                  '✓',
+                                                  'X',
                                                   style: pw.TextStyle(
                                                     color: PdfColors.black,
                                                     fontWeight:
@@ -1537,7 +1646,7 @@ class PdfService {
                 mainAxisAlignment: pw.MainAxisAlignment.center,
                 children: [
                   pw.Text(
-                    '✨ Generated by MAGIC LEDGER ✨',
+                    'Generated by MAGIC LEDGER',
                     style: pw.TextStyle(
                       font: boldFont,
                       fontSize: 14,
@@ -1548,6 +1657,15 @@ class PdfService {
                   pw.SizedBox(height: 4),
                   pw.Text(
                     'Track • Analyze • Achieve',
+                    style: pw.TextStyle(
+                      font: regularFont,
+                      fontSize: 10,
+                      color: PdfColors.black,
+                    ),
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Text(
+                    'Visagan • Visainnovations',
                     style: pw.TextStyle(
                       font: regularFont,
                       fontSize: 10,
@@ -1578,7 +1696,10 @@ class PdfService {
 
     final List<Map<String, dynamic>> result =
         categoryTotals.entries.map((entry) {
-          final category = categories.firstWhere((c) => c.id == entry.key);
+          final category = categories.firstWhere(
+            (c) => c.id == entry.key,
+            orElse: () => categories.first,
+          );
           final int percentage =
               total > 0 ? (entry.value / total * 100).round() : 0;
 

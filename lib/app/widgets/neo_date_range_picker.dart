@@ -80,10 +80,22 @@ class _NeoDateRangePickerState extends State<NeoDateRangePicker> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Make dialog responsive to screen size
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = screenWidth < 450 ? screenWidth * 0.9 : 400.0;
+
     return Dialog(
       backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: screenWidth < 450 ? 16 : 40,
+        vertical: 24,
+      ),
       child: Container(
-        width: 400,
+        width: dialogWidth,
+        constraints: BoxConstraints(
+          maxWidth: 400,
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
         decoration: NeoBrutalismTheme.neoBox(
           color:
               isDark
@@ -117,17 +129,22 @@ class _NeoDateRangePickerState extends State<NeoDateRangePicker> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            'SELECT DATE RANGE',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: NeoBrutalismTheme.primaryBlack,
+          Flexible(
+            child: Text(
+              'SELECT DATE RANGE',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: NeoBrutalismTheme.primaryBlack,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           IconButton(
             onPressed: () => Get.back(),
             icon: Icon(Icons.close, color: NeoBrutalismTheme.primaryBlack),
+            constraints: BoxConstraints(),
+            padding: EdgeInsets.zero,
           ),
         ],
       ),
@@ -164,6 +181,7 @@ class _NeoDateRangePickerState extends State<NeoDateRangePicker> {
                 children: [
                   Icon(
                     Icons.calendar_today,
+                    size: 20,
                     color:
                         _startDate != null
                             ? NeoBrutalismTheme.primaryBlack
@@ -172,16 +190,19 @@ class _NeoDateRangePickerState extends State<NeoDateRangePicker> {
                                 : NeoBrutalismTheme.primaryBlack),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    startText,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      color:
-                          _startDate != null
-                              ? NeoBrutalismTheme.primaryBlack
-                              : (isDark
-                                  ? NeoBrutalismTheme.darkText
-                                  : NeoBrutalismTheme.primaryBlack),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      startText,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        color:
+                            _startDate != null
+                                ? NeoBrutalismTheme.primaryBlack
+                                : (isDark
+                                    ? NeoBrutalismTheme.darkText
+                                    : NeoBrutalismTheme.primaryBlack),
+                      ),
                     ),
                   ),
                 ],
@@ -189,9 +210,10 @@ class _NeoDateRangePickerState extends State<NeoDateRangePicker> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Icon(
               Icons.arrow_forward,
+              size: 20,
               color:
                   isDark
                       ? NeoBrutalismTheme.darkText
@@ -214,6 +236,7 @@ class _NeoDateRangePickerState extends State<NeoDateRangePicker> {
                 children: [
                   Icon(
                     Icons.calendar_today,
+                    size: 20,
                     color:
                         _endDate != null
                             ? NeoBrutalismTheme.primaryBlack
@@ -222,16 +245,19 @@ class _NeoDateRangePickerState extends State<NeoDateRangePicker> {
                                 : NeoBrutalismTheme.primaryBlack),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    endText,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      color:
-                          _endDate != null
-                              ? NeoBrutalismTheme.primaryBlack
-                              : (isDark
-                                  ? NeoBrutalismTheme.darkText
-                                  : NeoBrutalismTheme.primaryBlack),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      endText,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        color:
+                            _endDate != null
+                                ? NeoBrutalismTheme.primaryBlack
+                                : (isDark
+                                    ? NeoBrutalismTheme.darkText
+                                    : NeoBrutalismTheme.primaryBlack),
+                      ),
                     ),
                   ),
                 ],
@@ -245,15 +271,16 @@ class _NeoDateRangePickerState extends State<NeoDateRangePicker> {
 
   Widget _buildCalendar(bool isDark) {
     return Container(
-      height: 380,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           _buildMonthSelector(isDark),
           const SizedBox(height: 16),
           _buildWeekDays(isDark),
           const SizedBox(height: 8),
-          Expanded(child: _buildCalendarGrid(isDark)),
+          _buildCalendarGrid(isDark),
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -272,16 +299,22 @@ class _NeoDateRangePickerState extends State<NeoDateRangePicker> {
                     ? NeoBrutalismTheme.darkText
                     : NeoBrutalismTheme.primaryBlack,
           ),
+          constraints: BoxConstraints(),
+          padding: EdgeInsets.all(8),
         ),
-        Text(
-          '${_getMonthName(_currentMonth.month)} ${_currentMonth.year}',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-            color:
-                isDark
-                    ? NeoBrutalismTheme.darkText
-                    : NeoBrutalismTheme.primaryBlack,
+        Flexible(
+          child: Text(
+            '${_getMonthName(_currentMonth.month)} ${_currentMonth.year}',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
+            ),
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         IconButton(
@@ -293,6 +326,8 @@ class _NeoDateRangePickerState extends State<NeoDateRangePicker> {
                     ? NeoBrutalismTheme.darkText
                     : NeoBrutalismTheme.primaryBlack,
           ),
+          constraints: BoxConstraints(),
+          padding: EdgeInsets.all(8),
         ),
       ],
     );
@@ -304,8 +339,7 @@ class _NeoDateRangePickerState extends State<NeoDateRangePicker> {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children:
           weekDays.map((day) {
-            return Container(
-              width: 40,
+            return Expanded(
               child: Center(
                 child: Text(
                   day,
@@ -338,7 +372,7 @@ class _NeoDateRangePickerState extends State<NeoDateRangePicker> {
 
     // Add empty cells for days before month starts
     for (int i = 0; i < startingWeekday; i++) {
-      dayWidgets.add(Container(width: 40, height: 40));
+      dayWidgets.add(Container());
     }
 
     // Add days of month
@@ -347,13 +381,21 @@ class _NeoDateRangePickerState extends State<NeoDateRangePicker> {
       dayWidgets.add(_buildDayCell(date, isDark));
     }
 
-    return GridView.count(
-      crossAxisCount: 7,
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      children: dayWidgets,
+    // Calculate the number of rows needed
+    final totalCells = startingWeekday + lastDayOfMonth.day;
+    final rows = (totalCells / 7).ceil();
+
+    return Container(
+      height: rows * 48.0, // Dynamic height based on number of rows
+      child: GridView.count(
+        crossAxisCount: 7,
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        mainAxisSpacing: 4,
+        crossAxisSpacing: 4,
+        childAspectRatio: 1.0,
+        children: dayWidgets,
+      ),
     );
   }
 
@@ -377,7 +419,7 @@ class _NeoDateRangePickerState extends State<NeoDateRangePicker> {
       decoration = BoxDecoration(
         color: backgroundColor,
         shape: BoxShape.circle,
-        border: Border.all(color: NeoBrutalismTheme.primaryBlack, width: 3),
+        border: Border.all(color: NeoBrutalismTheme.primaryBlack, width: 2),
       );
     } else if (isInRange) {
       backgroundColor = _getSelectionColor(isDark).withOpacity(0.3);
@@ -412,7 +454,7 @@ class _NeoDateRangePickerState extends State<NeoDateRangePicker> {
             ),
             if (isToday && !isSelected)
               Positioned(
-                bottom: 4,
+                bottom: 2,
                 child: Container(
                   width: 4,
                   height: 4,
@@ -442,29 +484,33 @@ class _NeoDateRangePickerState extends State<NeoDateRangePicker> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          NeoButton(
-            text: 'CANCEL',
-            onPressed: () => Get.back(),
-            color:
-                isDark
-                    ? NeoBrutalismTheme.darkSurface
-                    : NeoBrutalismTheme.primaryWhite,
-            textColor:
-                isDark
-                    ? NeoBrutalismTheme.darkText
-                    : NeoBrutalismTheme.primaryBlack,
-            width: 100,
+          Flexible(
+            child: NeoButton(
+              text: 'CANCEL',
+              onPressed: () => Get.back(),
+              color:
+                  isDark
+                      ? NeoBrutalismTheme.darkSurface
+                      : NeoBrutalismTheme.primaryWhite,
+              textColor:
+                  isDark
+                      ? NeoBrutalismTheme.darkText
+                      : NeoBrutalismTheme.primaryBlack,
+              width: 100,
+            ),
           ),
           const SizedBox(width: 16),
-          NeoButton(
-            text: 'SAVE',
-            onPressed: () {
-              widget.onDateRangeSelected(_startDate, _endDate);
-              Get.back();
-            },
-            color: _getSuccessColor(isDark),
-            textColor: NeoBrutalismTheme.primaryBlack,
-            width: 100,
+          Flexible(
+            child: NeoButton(
+              text: 'SAVE',
+              onPressed: () {
+                widget.onDateRangeSelected(_startDate, _endDate);
+                Get.back();
+              },
+              color: _getSuccessColor(isDark),
+              textColor: NeoBrutalismTheme.primaryBlack,
+              width: 100,
+            ),
           ),
         ],
       ),

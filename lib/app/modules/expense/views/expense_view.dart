@@ -8,6 +8,8 @@ import '../../../data/models/income_model.dart';
 import '../../../theme/neo_brutalism_theme.dart';
 import '../../../widgets/neo_button.dart';
 import '../../../widgets/neo_card.dart';
+// Import your custom date range picker
+import '../../../widgets/neo_date_range_picker.dart';
 import '../../category/controllers/category_controller.dart';
 import '../../income/controllers/income_controller.dart';
 import '../controllers/expense_controller.dart';
@@ -20,6 +22,10 @@ class ExpenseView extends GetView<ExpenseController> {
 
   final RxString selectedFilter = 'All'.obs;
   final RxString selectedType = 'Expenses'.obs; // 'Expenses' or 'Income'
+
+  // Add custom date range variables
+  final Rx<DateTime?> customStartDate = Rx<DateTime?>(null);
+  final Rx<DateTime?> customEndDate = Rx<DateTime?>(null);
 
   @override
   Widget build(BuildContext context) {
@@ -296,6 +302,57 @@ class ExpenseView extends GetView<ExpenseController> {
           ),
           const SizedBox(height: 0),
           _buildFilterGrid(isDark),
+          // Add custom date range display if selected
+          Obx(() {
+            if (selectedFilter.value == 'Custom' &&
+                customStartDate.value != null &&
+                customEndDate.value != null) {
+              return Container(
+                margin: const EdgeInsets.only(top: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: NeoBrutalismTheme.neoBox(
+                  color: _getThemedColor(NeoBrutalismTheme.accentBlue, isDark),
+                  borderColor: NeoBrutalismTheme.primaryBlack,
+                  offset: 2,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.date_range,
+                      size: 20,
+                      color: NeoBrutalismTheme.primaryBlack,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '${customStartDate.value!.day}/${customStartDate.value!.month}/${customStartDate.value!.year} - ${customEndDate.value!.day}/${customEndDate.value!.month}/${customEndDate.value!.year}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: NeoBrutalismTheme.primaryBlack,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.close,
+                        size: 20,
+                        color: NeoBrutalismTheme.primaryBlack,
+                      ),
+                      onPressed: () {
+                        customStartDate.value = null;
+                        customEndDate.value = null;
+                        selectedFilter.value = 'All';
+                      },
+                      constraints: BoxConstraints(),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ],
+                ),
+              ).animate().fadeIn().slideY(begin: -0.5, end: 0);
+            }
+            return const SizedBox.shrink();
+          }),
         ],
       ),
     ).animate().fadeIn(delay: 200.ms);
@@ -307,6 +364,7 @@ class ExpenseView extends GetView<ExpenseController> {
       {'label': 'Today', 'icon': Icons.today},
       {'label': 'This Week', 'icon': Icons.view_week},
       {'label': 'This Month', 'icon': Icons.calendar_month},
+      {'label': 'Custom', 'icon': Icons.date_range}, // Add custom filter
     ];
 
     return GridView.builder(
@@ -327,6 +385,7 @@ class ExpenseView extends GetView<ExpenseController> {
             filter['icon'] as IconData,
             selectedFilter.value == filter['label'],
             isDark,
+            context, // Pass context for showing date picker
           ),
         );
       },
@@ -338,9 +397,38 @@ class ExpenseView extends GetView<ExpenseController> {
     IconData icon,
     bool isSelected,
     bool isDark,
+    BuildContext context, // Add context parameter
   ) {
     return GestureDetector(
-      onTap: () => selectedFilter.value = label,
+      onTap: () {
+        if (label == 'Custom') {
+          // Show date range picker
+          showDialog(
+            context: context,
+            builder:
+                (context) => NeoDateRangePicker(
+                  initialStartDate: customStartDate.value,
+                  initialEndDate: customEndDate.value,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime.now().add(Duration(days: 365)),
+                  onDateRangeSelected: (start, end) {
+                    if (start != null && end != null) {
+                      customStartDate.value = start;
+                      customEndDate.value = end;
+                      selectedFilter.value = 'Custom';
+                    }
+                  },
+                ),
+          );
+        } else {
+          selectedFilter.value = label;
+          // Reset custom dates when selecting other filters
+          if (label != 'Custom') {
+            customStartDate.value = null;
+            customEndDate.value = null;
+          }
+        }
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -419,6 +507,14 @@ class ExpenseView extends GetView<ExpenseController> {
           return expense.date.year == now.year &&
               expense.date.month == now.month;
         }).toList();
+      case 'Custom':
+        if (customStartDate.value != null && customEndDate.value != null) {
+          return controller.getExpensesByDateRange(
+            customStartDate.value!,
+            customEndDate.value!,
+          );
+        }
+        return controller.expenses.toList();
       default:
         return controller.expenses.toList();
     }
@@ -456,6 +552,19 @@ class ExpenseView extends GetView<ExpenseController> {
         return incomeController.incomes.where((income) {
           return income.date.year == now.year && income.date.month == now.month;
         }).toList();
+      case 'Custom':
+        if (customStartDate.value != null && customEndDate.value != null) {
+          // Add custom date range filtering for income
+          return incomeController.incomes.where((income) {
+            return income.date.isAfter(
+                  customStartDate.value!.subtract(const Duration(days: 1)),
+                ) &&
+                income.date.isBefore(
+                  customEndDate.value!.add(const Duration(days: 1)),
+                );
+          }).toList();
+        }
+        return incomeController.incomes.toList();
       default:
         return incomeController.incomes.toList();
     }

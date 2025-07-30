@@ -10,14 +10,88 @@ class CategoryController extends GetxController {
 
   // Default categories
   final List<Map<String, dynamic>> defaultCategories = [
-    {'name': 'Food', 'icon': '🍔', 'color': Colors.orange.value},
-    {'name': 'Transport', 'icon': '🚗', 'color': Colors.blue.value},
-    {'name': 'Shopping', 'icon': '🛍️', 'color': Colors.pink.value},
-    {'name': 'Bills', 'icon': '💡', 'color': Colors.yellow.value},
-    {'name': 'Entertainment', 'icon': '🎬', 'color': Colors.purple.value},
-    {'name': 'Health', 'icon': '💊', 'color': Colors.green.value},
-    {'name': 'Education', 'icon': '📚', 'color': Colors.indigo.value},
-    {'name': 'Others', 'icon': '📌', 'color': Colors.grey.value},
+    {
+      'name': 'Food',
+      'icon': '🍔',
+      'color': Color(0xFFFFB49A).value,
+    }, // Peach/Coral
+    {
+      'name': 'Transport',
+      'icon': '🚗',
+      'color': Color(0xFF9DB4FF).value,
+    }, // Soft Periwinkle Blue
+    {
+      'name': 'Shopping',
+      'icon': '🛍️',
+      'color': Color(0xFFFDB5D6).value,
+    }, // Pastel Pink
+    {
+      'name': 'Bills',
+      'icon': '💡',
+      'color': Color(0xFFFDD663).value,
+    }, // Softer Yellow
+    {
+      'name': 'Entertainment',
+      'icon': '🎬',
+      'color': Color(0xFFE8CCFF).value,
+    }, // Lavender
+    {
+      'name': 'Health',
+      'icon': '💊',
+      'color': Color(0xFFB8E994).value,
+    }, // Mint Green
+    {
+      'name': 'Education',
+      'icon': '📚',
+      'color': Color(0xFFBFE3F0).value,
+    }, // Light Sky Blue
+    // New Categories Added
+    {
+      'name': 'Groceries',
+      'icon': '🛒',
+      'color': Color(0xFFD4E4D1).value,
+    }, // Sage Green
+    {
+      'name': 'Home',
+      'icon': '🏠',
+      'color': Color(0xFFF5E6D3).value,
+    }, // Warm Beige
+    {
+      'name': 'Subscriptions',
+      'icon': '🔁',
+      'color': Color(0xFFDCC9E8).value,
+    }, // Soft Lilac
+    {
+      'name': 'Travel',
+      'icon': '✈️',
+      'color': Color(0xFFA7C7E7).value,
+    }, // Baby Blue
+    {
+      'name': 'Personal Care',
+      'icon': '🧴',
+      'color': Color(0xFFFFDAB9).value,
+    }, // Light Peach
+    {
+      'name': 'Fitness',
+      'icon': '🏋️',
+      'color': Color(0xFF4DB6AC).value,
+    }, // Muted Teal
+    {
+      'name': 'Gifts',
+      'icon': '🎁',
+      'color': Color(0xFFE57373).value,
+    }, // Soft Poppy Red
+    {
+      'name': 'Work',
+      'icon': '💼',
+      'color': Color(0xFFC8B593).value,
+    }, // Darker Sand
+    // Default/Fallback Category
+    {
+      'name': 'Others',
+      'icon': '📌',
+      'color': Color(0xFFB0BEC5).value,
+    }, // Blue Grey
   ];
 
   @override

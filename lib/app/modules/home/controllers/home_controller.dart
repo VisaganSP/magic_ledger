@@ -5,9 +5,9 @@ import '../../income/controllers/income_controller.dart';
 import '../../todo/controllers/todo_controller.dart';
 
 class HomeController extends GetxController {
-  final ExpenseController expenseController = Get.find();
-  final TodoController todoController = Get.find();
-  final IncomeController incomeController = Get.find();
+  late final ExpenseController expenseController;
+  late final TodoController todoController;
+  late final IncomeController incomeController;
 
   final RxInt selectedIndex = 0.obs;
   final RxDouble totalExpensesThisMonth = 0.0.obs;
@@ -18,19 +18,48 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
+    // Initialize controllers
+    expenseController = Get.find<ExpenseController>();
+    todoController = Get.find<TodoController>();
+    incomeController = Get.find<IncomeController>();
+
+    // Initial calculation
     calculateStats();
 
-    // Listen to changes in all controllers
-    ever(expenseController.expenses, (_) => calculateStats());
-    ever(todoController.todos, (_) => calculateStats());
-    ever(incomeController.incomes, (_) => calculateStats());
+    // Set up reactive bindings with more specific listeners
+    setupReactiveBindings();
+  }
+
+  void setupReactiveBindings() {
+    // Listen to changes in expenses
+    ever(expenseController.expenses, (_) {
+      print('Expenses changed, recalculating stats...');
+      calculateStats();
+    });
+
+    // Listen to changes in todos
+    ever(todoController.todos, (_) {
+      print('Todos changed, recalculating stats...');
+      calculateStats();
+    });
+
+    // Listen to changes in incomes
+    ever(incomeController.incomes, (_) {
+      print('Incomes changed, recalculating stats...');
+      calculateStats();
+    });
+
+    // Also listen to todo counts
+    ever(todoController.pendingCount, (_) => calculateStats());
+    ever(todoController.completedCount, (_) => calculateStats());
   }
 
   @override
   void onReady() {
     super.onReady();
-    // Recalculate stats when the view is ready
-    calculateStats();
+    // Force a refresh when the view is ready
+    refreshStats();
   }
 
   void calculateStats() {
@@ -40,7 +69,12 @@ class HomeController extends GetxController {
       final startOfMonth = DateTime(now.year, now.month, 1);
       final endOfMonth = DateTime(now.year, now.month + 1, 0);
 
-      totalExpensesThisMonth.value = expenseController.expenses
+      // Make sure we're using the latest data
+      final expenses = expenseController.expenses;
+      final todos = todoController.todos;
+      final incomes = incomeController.incomes;
+
+      totalExpensesThisMonth.value = expenses
           .where(
             (expense) =>
                 expense.date.year == now.year &&
@@ -54,9 +88,11 @@ class HomeController extends GetxController {
         endOfMonth,
       );
 
-      // Calculate pending todos
-      pendingTodos.value =
-          todoController.todos.where((todo) => !todo.isCompleted).length;
+      // Calculate pending todos - force refresh from the list
+      pendingTodos.value = todos.where((todo) => !todo.isCompleted).length;
+
+      print('Pending todos calculated: ${pendingTodos.value}');
+      print('Total todos: ${todos.length}');
 
       // Calculate savings percentage
       if (totalIncomeThisMonth.value > 0) {
@@ -76,21 +112,40 @@ class HomeController extends GetxController {
       totalIncomeThisMonth.value = 0.0;
       pendingTodos.value = 0;
       savingsPercentage.value = 0.0;
+      update();
     }
   }
 
   void changeTab(int index) {
     selectedIndex.value = index;
+
+    // Always refresh stats when returning to home tab
+    if (index == 0) {
+      // Small delay to ensure any pending updates are complete
+      Future.delayed(const Duration(milliseconds: 100), () {
+        refreshStats();
+      });
+    }
   }
 
   // Force refresh method that can be called from other views
   void refreshStats() {
+    print('Refreshing all stats...');
+
     // Refresh all controller data first
     expenseController.loadExpenses();
     incomeController.loadIncomes();
     todoController.loadTodos();
 
-    // Then recalculate stats
-    calculateStats();
+    // Small delay to ensure data is loaded
+    Future.delayed(const Duration(milliseconds: 100), () {
+      // Then recalculate stats
+      calculateStats();
+    });
+  }
+
+  // Method to be called when returning to home from other screens
+  void onReturnToHome() {
+    refreshStats();
   }
 }

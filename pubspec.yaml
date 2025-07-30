@@ -37,10 +37,16 @@ dependencies:
   # Notifications
   flutter_local_notifications: ^19.4.0
   timezone: ^0.10.1
+  permission_handler: ^12.0.1
+  app_settings: ^6.1.1
 
   # Utilities
   intl: ^0.20.2
   uuid: ^4.5.1
+  url_launcher: ^6.3.2
+
+  # local auth
+  local_auth: ^2.3.0
 
 dev_dependencies:
   flutter_test:
