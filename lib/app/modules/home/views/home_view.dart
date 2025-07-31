@@ -191,6 +191,28 @@ class HomeView extends GetView<HomeController> {
         children: [
           Obx(
             () => _buildStatCard(
+              'BALANCE',
+              _formatCurrency(
+                controller.totalIncomeThisMonth.value -
+                    controller.totalExpensesThisMonth.value,
+              ),
+              _getThemedColor(NeoBrutalismTheme.accentSage, isDark),
+              Icons.balance,
+              isDark: isDark,
+              onTap:
+                  () => _showStatDialog(
+                    'Monthly Balance',
+                    '₹${controller.totalIncomeThisMonth.value - controller.totalExpensesThisMonth.value}',
+                    'Total balance left this month',
+                    _getThemedColor(NeoBrutalismTheme.accentSage, isDark),
+                    Icons.balance,
+                    isDark,
+                  ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Obx(
+            () => _buildStatCard(
               'THIS MONTH',
               _formatCurrency(controller.totalExpensesThisMonth.value),
               _getThemedColor(NeoBrutalismTheme.accentPink, isDark),
