@@ -1635,7 +1635,7 @@ class PdfService {
           ),
           // Main footer
           pw.Container(
-            height: 60,
+            height: 100,
             padding: const pw.EdgeInsets.all(16),
             decoration: pw.BoxDecoration(
               color: primaryPurple,
@@ -1659,7 +1659,7 @@ class PdfService {
                     'Track • Analyze • Achieve',
                     style: pw.TextStyle(
                       font: regularFont,
-                      fontSize: 10,
+                      fontSize: 12,
                       color: PdfColors.black,
                     ),
                   ),
@@ -1668,7 +1668,7 @@ class PdfService {
                     'Visagan • Visainnovations',
                     style: pw.TextStyle(
                       font: regularFont,
-                      fontSize: 10,
+                      fontSize: 12,
                       color: PdfColors.black,
                     ),
                   ),
