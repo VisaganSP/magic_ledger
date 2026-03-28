@@ -1,7 +1,11 @@
 import 'package:get/get.dart';
 
+import '../bindings/budget_binding.dart';
 import '../bindings/expense_binding.dart';
 import '../bindings/todo_binding.dart';
+import '../modules/budget/views/add_budget_view.dart';
+import '../modules/budget/views/budget_view.dart';
+import '../modules/category/controllers/category_controller.dart';
 import '../modules/category/views/add_category_view.dart';
 import '../modules/category/views/category_view.dart';
 import '../modules/expense/views/add_expense_view.dart';
@@ -73,6 +77,33 @@ class AppPages {
       name: Routes.INCOME_DETAIL,
       page: () => IncomeDetailView(),
       binding: IncomeBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    // BUDGET ROUTES
+    GetPage(
+      name: Routes.categories,
+      page: () => CategoryView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => CategoryController());
+      }),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.budgets,
+      page: () => BudgetView(),
+      binding: BudgetBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.ADD_BUDGET,
+      page: () => AddBudgetView(),
+      binding: BudgetBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.EDIT_BUDGET,
+      page: () => AddBudgetView(),
+      binding: BudgetBinding(),
       transition: Transition.rightToLeft,
     ),
   ];

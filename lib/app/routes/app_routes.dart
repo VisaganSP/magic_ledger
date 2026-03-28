@@ -13,4 +13,10 @@ abstract class Routes {
   static const TODO_DETAIL = '/todo-detail';
   static const ANALYTICS = '/analytics';
   static const SETTINGS = '/settings';
+
+  // NEW BUDGET ROUTES
+  static const categories = '/categories-manage';
+  static const budgets = '/budgets';
+  static const ADD_BUDGET = '/add-budget';
+  static const EDIT_BUDGET = '/edit-budget';
 }

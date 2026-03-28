@@ -15,6 +15,7 @@ class HiveProvider {
   static const String receiptBoxName = 'receipts';
   static const String settingsBoxName = 'settings';
   static const String incomeBoxName = 'income';
+  static const String autocompleteBoxName = 'autocomplete'; // NEW
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -51,6 +52,7 @@ class HiveProvider {
     await Hive.openBox<ReceiptModel>(receiptBoxName);
     await Hive.openBox<IncomeModel>(incomeBoxName);
     await Hive.openBox(settingsBoxName);
+    await Hive.openBox(autocompleteBoxName); // NEW
   }
 
   static Future<void> closeBoxes() async {
@@ -58,17 +60,13 @@ class HiveProvider {
   }
 
   static Future<void> clearAllData() async {
-    // Use the already opened typed boxes instead of trying to reopen them
     try {
-      // Clear typed boxes using the getter methods
       await getExpenseBox().clear();
       await getTodoBox().clear();
       await getBudgetBox().clear();
       await getReceiptBox().clear();
       await getIncomeBox().clear();
-
-      // Don't clear categories and settings as per the original comment
-      // await getCategoryBox().clear();
+      // Don't clear autocomplete, categories, and settings
     } catch (e) {
       print('Error clearing data: $e');
       throw e;
@@ -101,5 +99,10 @@ class HiveProvider {
 
   static Box getSettingsBox() {
     return Hive.box(settingsBoxName);
+  }
+
+  // NEW
+  static Box getAutocompleteBox() {
+    return Hive.box(autocompleteBoxName);
   }
 }

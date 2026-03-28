@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../modules/analytics/controllers/analytics_controller.dart';
 import '../modules/category/controllers/category_controller.dart';
 import '../modules/expense/controllers/expense_controller.dart';
+import '../modules/expense/controllers/autocomplete_controller.dart'; // NEW
 import '../modules/home/controllers/home_controller.dart';
 import '../modules/income/controllers/income_controller.dart';
 import '../modules/settings/controllers/settings_controller.dart';
@@ -13,6 +14,7 @@ class InitialBinding extends Bindings {
   void dependencies() {
     Get.lazyPut<CategoryController>(() => CategoryController(), fenix: true);
     Get.lazyPut<ExpenseController>(() => ExpenseController(), fenix: true);
+    Get.lazyPut<AutocompleteController>(() => AutocompleteController(), fenix: true); // NEW
     Get.lazyPut<TodoController>(() => TodoController(), fenix: true);
     Get.lazyPut<IncomeController>(() => IncomeController(), fenix: true);
     Get.lazyPut<AnalyticsController>(() => AnalyticsController(), fenix: true);

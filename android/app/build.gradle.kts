@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.visainnovations.magic_ledger"
-    compileSdk = 35  // Updated to SDK 35
+    compileSdk = 36  // Updated to SDK 35
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -23,7 +23,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.visainnovations.magic_ledger"
-        minSdk = 21  // Minimum SDK for notifications
+        minSdk = flutter.minSdkVersion  // Minimum SDK for notifications
         targetSdk = 34  // Keep target SDK at 34 for now
         versionCode = flutter.versionCode
         versionName = flutter.versionName
