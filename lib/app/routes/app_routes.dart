@@ -19,4 +19,6 @@ abstract class Routes {
   static const budgets = '/budgets';
   static const ADD_BUDGET = '/add-budget';
   static const EDIT_BUDGET = '/edit-budget';
+  static const accounts = '/accounts';
+  static const addAccount = '/add-account';
 }

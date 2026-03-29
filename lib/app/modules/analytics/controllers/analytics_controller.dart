@@ -1,59 +1,84 @@
 import 'package:get/get.dart';
 
 import '../../../data/models/expense_model.dart';
+import '../../../data/models/income_model.dart';
+import '../../../data/services/period_service.dart';
+import '../../account/controllers/account_controller.dart';
 import '../../category/controllers/category_controller.dart';
 import '../../expense/controllers/expense_controller.dart';
+import '../../income/controllers/income_controller.dart';
 
 class AnalyticsController extends GetxController {
   final ExpenseController expenseController = Get.find();
   final CategoryController categoryController = Get.find();
+  final IncomeController incomeController = Get.find();
+  late final AccountController accountController;
+  late final PeriodService periodService;
 
-  // Observable values
+  // Period selection for analytics (separate from home period)
   final RxString selectedPeriod = 'This Month'.obs;
+  final Rx<DateTime?> customStartDate = Rx<DateTime?>(null);
+  final Rx<DateTime?> customEndDate = Rx<DateTime?>(null);
+
+  // ─── CORE STATS ──────────────────────────────────────────
   final RxDouble totalSpent = 0.0.obs;
+  final RxDouble totalEarned = 0.0.obs;
+  final RxDouble netFlow = 0.0.obs;
   final RxDouble avgDailySpent = 0.0.obs;
-  final RxList<Map<String, dynamic>> categoryData =
-      <Map<String, dynamic>>[].obs;
-  final RxList<double> trendData = <double>[].obs;
+  final RxDouble avgDailyEarned = 0.0.obs;
+  final RxInt expenseCount = 0.obs;
+  final RxInt incomeCount = 0.obs;
+
+  // ─── INSIGHTS ────────────────────────────────────────────
+  final RxDouble highestExpense = 0.0.obs;
+  final RxString highestExpenseTitle = ''.obs;
+  final RxDouble lowestExpense = 0.0.obs;
+  final RxDouble avgTransaction = 0.0.obs;
+  final RxString mostSpentCategory = ''.obs;
+  final RxString mostSpentCategoryIcon = ''.obs;
+  final RxDouble mostSpentCategoryAmount = 0.0.obs;
+  final RxDouble savingsRate = 0.0.obs;
+
+  // ─── COMPARISON (vs previous period) ─────────────────────
+  final RxDouble prevPeriodSpent = 0.0.obs;
+  final RxDouble prevPeriodEarned = 0.0.obs;
+  final RxDouble spendingChange = 0.0.obs;
+  final RxDouble incomeChange = 0.0.obs;
+
+  // ─── CHART DATA ──────────────────────────────────────────
+  final RxList<Map<String, dynamic>> categoryData = <Map<String, dynamic>>[].obs;
+  final RxList<double> expenseTrendData = <double>[].obs;
+  final RxList<double> incomeTrendData = <double>[].obs;
   final RxList<String> trendLabels = <String>[].obs;
   final RxList<ExpenseModel> topExpenses = <ExpenseModel>[].obs;
 
-  // Additional analytics
-  final RxDouble highestExpense = 0.0.obs;
-  final RxDouble lowestExpense = 0.0.obs;
-  final RxString mostSpentCategory = ''.obs;
-  final RxInt totalTransactions = 0.obs;
-  final RxDouble monthlyAverage = 0.0.obs;
-  final RxMap<String, double> monthlyTotals = <String, double>{}.obs;
-
-  // Add custom date range properties
-  final Rx<DateTime?> customStartDate = Rx<DateTime?>(null);
-  final Rx<DateTime?> customEndDate = Rx<DateTime?>(null);
+  // ─── SPENDING VELOCITY ───────────────────────────────────
+  final RxDouble spendingVelocity = 0.0.obs; // per day change rate
+  final RxDouble projectedMonthEnd = 0.0.obs;
+  final RxInt daysRemaining = 0.obs;
 
   @override
   void onInit() {
     super.onInit();
-    // Update analytics whenever period changes
+    accountController = Get.find<AccountController>();
+    periodService = Get.find<PeriodService>();
+
     ever(selectedPeriod, (_) => updateAnalytics());
-    // Update analytics whenever expenses change
     ever(expenseController.expenses, (_) => updateAnalytics());
-    // Initial analytics calculation
+    ever(incomeController.incomes, (_) => updateAnalytics());
+    ever(accountController.selectedAccountId, (_) => updateAnalytics());
+
     updateAnalytics();
   }
 
   void changePeriod(String period) {
-    selectedPeriod.value = period;
-
-    // Reset custom dates when selecting other periods
     if (period != 'Custom') {
       customStartDate.value = null;
       customEndDate.value = null;
     }
-
-    updateAnalytics();
+    selectedPeriod.value = period;
   }
 
-  // Add method to handle custom date range
   void setCustomDateRange(DateTime start, DateTime end) {
     customStartDate.value = start;
     customEndDate.value = end;
@@ -62,64 +87,260 @@ class AnalyticsController extends GetxController {
   }
 
   void updateAnalytics() {
-    final dateRange = _getDateRange();
-    final filteredExpenses = expenseController.getExpensesByDateRange(
-      dateRange['start']!,
-      dateRange['end']!,
-    );
+    final range = _getDateRange();
+    final start = range['start']!;
+    final end = range['end']!;
+    final accountId = accountController.selectedAccountId.value;
 
-    if (filteredExpenses.isEmpty) {
+    // Get filtered data
+    var expenses = expenseController.getExpensesByDateRange(start, end);
+    var incomes = incomeController.getIncomesByDateRange(start, end);
+
+    if (accountId != null) {
+      expenses = expenses.where((e) => e.accountId == accountId).toList();
+      incomes = incomes.where((i) => i.accountId == accountId).toList();
+    }
+
+    if (expenses.isEmpty && incomes.isEmpty) {
       _resetAnalytics();
       return;
     }
 
-    // Calculate total spent
-    totalSpent.value = filteredExpenses.fold(
-      0.0,
-      (sum, expense) => sum + expense.amount,
-    );
+    // Core stats
+    totalSpent.value = expenses.fold(0.0, (sum, e) => sum + e.amount);
+    totalEarned.value = incomes.fold(0.0, (sum, i) => sum + i.amount);
+    netFlow.value = totalEarned.value - totalSpent.value;
+    expenseCount.value = expenses.length;
+    incomeCount.value = incomes.length;
 
-    // Calculate average daily spent
-    final days = dateRange['end']!.difference(dateRange['start']!).inDays + 1;
+    final days = end.difference(start).inDays + 1;
     avgDailySpent.value = days > 0 ? totalSpent.value / days : 0;
+    avgDailyEarned.value = days > 0 ? totalEarned.value / days : 0;
 
-    // Calculate total transactions
-    totalTransactions.value = filteredExpenses.length;
+    // Savings rate
+    savingsRate.value = totalEarned.value > 0
+        ? ((totalEarned.value - totalSpent.value) / totalEarned.value * 100)
+        .clamp(-999, 100)
+        : 0.0;
 
-    // Calculate highest and lowest expense
-    filteredExpenses.sort((a, b) => b.amount.compareTo(a.amount));
-    highestExpense.value = filteredExpenses.first.amount;
-    lowestExpense.value = filteredExpenses.last.amount;
+    // Insights
+    if (expenses.isNotEmpty) {
+      final sorted = List<ExpenseModel>.from(expenses)
+        ..sort((a, b) => b.amount.compareTo(a.amount));
+      highestExpense.value = sorted.first.amount;
+      highestExpenseTitle.value = sorted.first.title;
+      lowestExpense.value = sorted.last.amount;
+      avgTransaction.value = totalSpent.value / expenses.length;
+    } else {
+      highestExpense.value = 0;
+      highestExpenseTitle.value = '';
+      lowestExpense.value = 0;
+      avgTransaction.value = 0;
+    }
 
-    // Calculate category breakdown
-    _updateCategoryData(filteredExpenses);
+    // Category breakdown
+    _updateCategoryData(expenses);
 
-    // Update spending trend
-    _updateTrendData(dateRange['start']!, dateRange['end']!);
+    // Trend data (expense + income lines)
+    _updateTrendData(start, end, accountId);
 
-    // Get top expenses
-    topExpenses.value =
-        List.from(filteredExpenses)
-          ..sort((a, b) => b.amount.compareTo(a.amount))
-          ..take(5).toList();
+    // Top expenses
+    topExpenses.value = (List<ExpenseModel>.from(expenses)
+      ..sort((a, b) => b.amount.compareTo(a.amount)))
+        .take(5)
+        .toList();
 
-    // Calculate monthly average
-    _calculateMonthlyAverage();
+    // Previous period comparison
+    _calculateComparison(start, end, accountId);
+
+    // Spending velocity
+    _calculateVelocity(expenses, start, end);
   }
 
   void _resetAnalytics() {
-    totalSpent.value = 0.0;
-    avgDailySpent.value = 0.0;
-    totalTransactions.value = 0;
-    highestExpense.value = 0.0;
-    lowestExpense.value = 0.0;
+    totalSpent.value = 0;
+    totalEarned.value = 0;
+    netFlow.value = 0;
+    avgDailySpent.value = 0;
+    avgDailyEarned.value = 0;
+    expenseCount.value = 0;
+    incomeCount.value = 0;
+    highestExpense.value = 0;
+    highestExpenseTitle.value = '';
+    lowestExpense.value = 0;
+    avgTransaction.value = 0;
     mostSpentCategory.value = '';
+    mostSpentCategoryIcon.value = '';
+    mostSpentCategoryAmount.value = 0;
+    savingsRate.value = 0;
+    prevPeriodSpent.value = 0;
+    prevPeriodEarned.value = 0;
+    spendingChange.value = 0;
+    incomeChange.value = 0;
     categoryData.clear();
-    trendData.clear();
+    expenseTrendData.clear();
+    incomeTrendData.clear();
     trendLabels.clear();
     topExpenses.clear();
-    monthlyTotals.clear();
-    monthlyAverage.value = 0.0;
+    spendingVelocity.value = 0;
+    projectedMonthEnd.value = 0;
+    daysRemaining.value = 0;
+  }
+
+  void _calculateComparison(DateTime start, DateTime end, String? accountId) {
+    final duration = end.difference(start);
+    final prevStart = start.subtract(duration);
+    final prevEnd = start.subtract(const Duration(days: 1));
+
+    var prevExpenses = expenseController.getExpensesByDateRange(prevStart, prevEnd);
+    var prevIncomes = incomeController.getIncomesByDateRange(prevStart, prevEnd);
+
+    if (accountId != null) {
+      prevExpenses = prevExpenses.where((e) => e.accountId == accountId).toList();
+      prevIncomes = prevIncomes.where((i) => i.accountId == accountId).toList();
+    }
+
+    prevPeriodSpent.value = prevExpenses.fold(0.0, (sum, e) => sum + e.amount);
+    prevPeriodEarned.value = prevIncomes.fold(0.0, (sum, i) => sum + i.amount);
+
+    spendingChange.value = prevPeriodSpent.value > 0
+        ? ((totalSpent.value - prevPeriodSpent.value) / prevPeriodSpent.value * 100)
+        : (totalSpent.value > 0 ? 100.0 : 0.0);
+
+    incomeChange.value = prevPeriodEarned.value > 0
+        ? ((totalEarned.value - prevPeriodEarned.value) / prevPeriodEarned.value * 100)
+        : (totalEarned.value > 0 ? 100.0 : 0.0);
+  }
+
+  void _calculateVelocity(List<ExpenseModel> expenses, DateTime start, DateTime end) {
+    final now = DateTime.now();
+    final isCurrentMonth = start.year == now.year && start.month == now.month;
+
+    if (isCurrentMonth && expenses.length >= 2) {
+      final daysElapsed = now.day;
+      spendingVelocity.value = daysElapsed > 0 ? totalSpent.value / daysElapsed : 0;
+
+      final totalDaysInMonth = DateTime(now.year, now.month + 1, 0).day;
+      daysRemaining.value = totalDaysInMonth - now.day;
+      projectedMonthEnd.value = spendingVelocity.value * totalDaysInMonth;
+    } else {
+      spendingVelocity.value = avgDailySpent.value;
+      daysRemaining.value = 0;
+      projectedMonthEnd.value = 0;
+    }
+  }
+
+  void _updateCategoryData(List<ExpenseModel> expenses) {
+    final Map<String, double> categoryTotals = {};
+
+    for (final expense in expenses) {
+      categoryTotals[expense.categoryId] =
+          (categoryTotals[expense.categoryId] ?? 0) + expense.amount;
+    }
+
+    if (categoryTotals.isNotEmpty) {
+      final mostSpentEntry = categoryTotals.entries.reduce(
+            (a, b) => a.value > b.value ? a : b,
+      );
+      final cat = categoryController.getCategoryForExpense(mostSpentEntry.key);
+      mostSpentCategory.value = cat.name;
+      mostSpentCategoryIcon.value = cat.icon;
+      mostSpentCategoryAmount.value = mostSpentEntry.value;
+    }
+
+    categoryData.value = categoryTotals.entries.map((entry) {
+      final cat = categoryController.getCategoryForExpense(entry.key);
+      final pct = totalSpent.value > 0
+          ? (entry.value / totalSpent.value * 100).round()
+          : 0;
+
+      return {
+        'name': cat.name,
+        'amount': entry.value,
+        'percentage': pct,
+        'color': cat.colorValue,
+        'icon': cat.icon,
+        'categoryId': cat.id,
+      };
+    }).toList()
+      ..sort((a, b) => (b['amount'] as double).compareTo(a['amount'] as double));
+  }
+
+  void _updateTrendData(DateTime start, DateTime end, String? accountId) {
+    expenseTrendData.clear();
+    incomeTrendData.clear();
+    trendLabels.clear();
+
+    final days = end.difference(start).inDays + 1;
+
+    if (days > 60) {
+      // Monthly grouping
+      DateTime current = DateTime(start.year, start.month, 1);
+      while (current.isBefore(end) ||
+          (current.year == end.year && current.month == end.month)) {
+        final monthEnd = DateTime(current.year, current.month + 1, 0);
+
+        var monthExp = expenseController.getExpensesByDateRange(current, monthEnd);
+        var monthInc = incomeController.getIncomesByDateRange(current, monthEnd);
+
+        if (accountId != null) {
+          monthExp = monthExp.where((e) => e.accountId == accountId).toList();
+          monthInc = monthInc.where((i) => i.accountId == accountId).toList();
+        }
+
+        trendLabels.add(_getMonthAbbr(current.month));
+        expenseTrendData.add(monthExp.fold(0.0, (s, e) => s + e.amount));
+        incomeTrendData.add(monthInc.fold(0.0, (s, i) => s + i.amount));
+
+        current = DateTime(current.year, current.month + 1, 1);
+      }
+    } else if (days > 14) {
+      // Weekly grouping
+      DateTime current = start;
+      int weekNum = 1;
+      while (current.isBefore(end) || current.isAtSameMomentAs(end)) {
+        final weekEnd = current.add(const Duration(days: 6));
+        final actualEnd = weekEnd.isAfter(end) ? end : weekEnd;
+
+        var weekExp = expenseController.getExpensesByDateRange(current, actualEnd);
+        var weekInc = incomeController.getIncomesByDateRange(current, actualEnd);
+
+        if (accountId != null) {
+          weekExp = weekExp.where((e) => e.accountId == accountId).toList();
+          weekInc = weekInc.where((i) => i.accountId == accountId).toList();
+        }
+
+        trendLabels.add('W$weekNum');
+        expenseTrendData.add(weekExp.fold(0.0, (s, e) => s + e.amount));
+        incomeTrendData.add(weekInc.fold(0.0, (s, i) => s + i.amount));
+
+        current = current.add(const Duration(days: 7));
+        weekNum++;
+      }
+    } else {
+      // Daily grouping
+      for (int i = 0; i < days; i++) {
+        final date = start.add(Duration(days: i));
+
+        var dayExp = expenseController.expenses.where((e) =>
+        e.date.year == date.year &&
+            e.date.month == date.month &&
+            e.date.day == date.day);
+        var dayInc = incomeController.incomes.where((i) =>
+        i.date.year == date.year &&
+            i.date.month == date.month &&
+            i.date.day == date.day);
+
+        if (accountId != null) {
+          dayExp = dayExp.where((e) => e.accountId == accountId);
+          dayInc = dayInc.where((i) => i.accountId == accountId);
+        }
+
+        trendLabels.add('${date.day}');
+        expenseTrendData.add(dayExp.fold(0.0, (s, e) => s + e.amount));
+        incomeTrendData.add(dayInc.fold(0.0, (s, i) => s + i.amount));
+      }
+    }
   }
 
   Map<String, DateTime> _getDateRange() {
@@ -144,14 +365,10 @@ class AnalyticsController extends GetxController {
         start = DateTime(now.year, 1, 1);
         break;
       case 'Custom':
-        // Use custom dates if available
         if (customStartDate.value != null && customEndDate.value != null) {
-          start = customStartDate.value!;
-          end = customEndDate.value!;
-        } else {
-          // Fallback to this month if custom dates not set
-          start = DateTime(now.year, now.month, 1);
+          return {'start': customStartDate.value!, 'end': customEndDate.value!};
         }
+        start = DateTime(now.year, now.month, 1);
         break;
       default:
         start = DateTime(now.year, now.month, 1);
@@ -160,209 +377,16 @@ class AnalyticsController extends GetxController {
     return {'start': start, 'end': end};
   }
 
-  void _updateCategoryData(List<ExpenseModel> expenses) {
-    final Map<String, double> categoryTotals = {};
-
-    // Calculate totals per category
-    for (final expense in expenses) {
-      categoryTotals[expense.categoryId] =
-          (categoryTotals[expense.categoryId] ?? 0) + expense.amount;
-    }
-
-    // Find most spent category
-    if (categoryTotals.isNotEmpty) {
-      final mostSpentEntry = categoryTotals.entries.reduce(
-        (a, b) => a.value > b.value ? a : b,
-      );
-      final category = categoryController.categories.firstWhere(
-        (c) => c.id == mostSpentEntry.key,
-        orElse: () => categoryController.categories.first,
-      );
-      mostSpentCategory.value = category.name;
-    }
-
-    // Create category data for pie chart
-    categoryData.value =
-        categoryTotals.entries.map((entry) {
-            final category = categoryController.categories.firstWhere(
-              (c) => c.id == entry.key,
-              orElse: () => categoryController.categories.first,
-            );
-            final percentage =
-                totalSpent.value > 0
-                    ? (entry.value / totalSpent.value * 100).round()
-                    : 0;
-
-            return {
-              'name': category.name,
-              'amount': entry.value.toDouble(), // Ensure it's a double
-              'percentage': percentage,
-              'color': category.colorValue,
-              'icon': category.icon,
-              'categoryId': category.id,
-            };
-          }).toList()
-          ..sort((a, b) {
-            // Safe comparison with null check
-            final aAmount = a['amount'] as double?;
-            final bAmount = b['amount'] as double?;
-            if (aAmount == null || bAmount == null) return 0;
-            return bAmount.compareTo(aAmount);
-          });
+  String _getMonthAbbr(int month) {
+    const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return m[month - 1];
   }
 
-  void _updateTrendData(DateTime start, DateTime end) {
-    trendData.clear();
-    trendLabels.clear();
-
-    final days = end.difference(start).inDays + 1;
-    final isMonthly = days > 31;
-
-    if (isMonthly) {
-      // Group by month for longer periods
-      Map<String, double> monthlyData = {};
-
-      // Initialize months
-      DateTime current = DateTime(start.year, start.month, 1);
-      while (current.isBefore(end) ||
-          (current.year == end.year && current.month == end.month)) {
-        final monthKey = '${current.month}/${current.year}';
-        monthlyData[monthKey] = 0;
-        current = DateTime(current.year, current.month + 1, 1);
-      }
-
-      // Fill in expense data
-      final expenses = expenseController.getExpensesByDateRange(start, end);
-      for (final expense in expenses) {
-        final monthKey = '${expense.date.month}/${expense.date.year}';
-        monthlyData[monthKey] = (monthlyData[monthKey] ?? 0) + expense.amount;
-      }
-
-      // Convert to lists for chart
-      monthlyData.forEach((key, value) {
-        final parts = key.split('/');
-        trendLabels.add(_getMonthAbbreviation(int.parse(parts[0])));
-        trendData.add(value);
-      });
-
-      // Store monthly totals for average calculation
-      monthlyTotals.value = monthlyData;
-    } else if (days > 7) {
-      // Group by week for medium periods
-      DateTime current = start;
-      while (current.isBefore(end) || current.isAtSameMomentAs(end)) {
-        final weekEnd = current.add(const Duration(days: 6));
-        final weekExpenses = expenseController.expenses
-            .where(
-              (e) =>
-                  e.date.isAfter(current.subtract(const Duration(days: 1))) &&
-                  e.date.isBefore(weekEnd.add(const Duration(days: 1))),
-            )
-            .fold(0.0, (sum, e) => sum + e.amount);
-
-        trendLabels.add('W${_getWeekNumber(current)}');
-        trendData.add(weekExpenses);
-
-        current = current.add(const Duration(days: 7));
-        if (current.isAfter(end)) break;
-      }
-    } else {
-      // Group by day for short periods
-      for (int i = 0; i < days; i++) {
-        final date = start.add(Duration(days: i));
-        final dayExpenses = expenseController.expenses
-            .where(
-              (e) =>
-                  e.date.year == date.year &&
-                  e.date.month == date.month &&
-                  e.date.day == date.day,
-            )
-            .fold(0.0, (sum, e) => sum + e.amount);
-
-        trendLabels.add('${date.day}');
-        trendData.add(dayExpenses);
-      }
-    }
-  }
-
-  void _calculateMonthlyAverage() {
-    if (monthlyTotals.isNotEmpty) {
-      final total = monthlyTotals.values.fold(0.0, (sum, value) => sum + value);
-      monthlyAverage.value = total / monthlyTotals.length;
-    } else {
-      // Calculate based on current data
-      final dateRange = _getDateRange();
-      final months =
-          (dateRange['end']!.month - dateRange['start']!.month + 1) +
-          (dateRange['end']!.year - dateRange['start']!.year) * 12;
-      monthlyAverage.value =
-          months > 0 ? totalSpent.value / months : totalSpent.value;
-    }
-  }
-
-  String _getMonthAbbreviation(int month) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return months[month - 1];
-  }
-
-  int _getWeekNumber(DateTime date) {
-    final firstDayOfYear = DateTime(date.year, 1, 1);
-    final daysSinceFirstDay = date.difference(firstDayOfYear).inDays;
-    return ((daysSinceFirstDay + firstDayOfYear.weekday - 1) / 7).ceil();
-  }
-
-  // Getters for additional analytics
-  double get savingsRate {
-    // This would need budget data to calculate properly
-    return 0.0;
-  }
-
-  Map<String, double> getCategoryBudgetComparison() {
-    final Map<String, double> comparison = {};
-
-    for (final categoryDataItem in categoryData) {
-      final categoryId = categoryDataItem['categoryId'] as String;
-      final spent = categoryDataItem['amount'] as double;
-      final category = categoryController.categories.firstWhere(
-        (c) => c.id == categoryId,
-        orElse: () => categoryController.categories.first,
-      );
-
-      if (category.budget != null && category.budget! > 0) {
-        comparison[category.name] = (spent / category.budget! * 100);
-      }
-    }
-
-    return comparison;
-  }
-
-  List<ExpenseModel> getExpensesByCategory(String categoryId) {
-    final dateRange = _getDateRange();
-    return expenseController
-        .getExpensesByDateRange(dateRange['start']!, dateRange['end']!)
-        .where((e) => e.categoryId == categoryId)
-        .toList();
-  }
-
-  // Method to get formatted date range string for display
   String getDateRangeString() {
     if (selectedPeriod.value == 'Custom' &&
         customStartDate.value != null &&
         customEndDate.value != null) {
-      return '${customStartDate.value!.day}/${customStartDate.value!.month}/${customStartDate.value!.year} - ${customEndDate.value!.day}/${customEndDate.value!.month}/${customEndDate.value!.year}';
+      return '${customStartDate.value!.day}/${customStartDate.value!.month} — ${customEndDate.value!.day}/${customEndDate.value!.month}';
     }
     return selectedPeriod.value;
   }

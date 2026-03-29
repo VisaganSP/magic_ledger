@@ -4,7 +4,8 @@ import 'package:get/get.dart';
 import 'app/bindings/initial_binding.dart';
 import 'app/data/providers/hive_provider.dart';
 import 'app/data/services/notification_service.dart';
-import 'app/routes/app_pages.dart'; // Make sure this import is correct
+import 'app/data/services/sms_transaction_service.dart';
+import 'app/routes/app_pages.dart';
 import 'app/theme/app_theme.dart';
 
 void main() async {
@@ -16,7 +17,7 @@ void main() async {
   // Initialize Notifications
   await NotificationService().init();
 
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {

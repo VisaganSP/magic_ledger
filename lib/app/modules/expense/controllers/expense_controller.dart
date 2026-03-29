@@ -169,23 +169,23 @@ class ExpenseController extends GetxController {
       expense.date.day,
     );
 
-    // Calculate months difference
     int monthsDiff =
         (today.year - lastExpenseDate.year) * 12 +
-        (today.month - lastExpenseDate.month);
+            (today.month - lastExpenseDate.month);
 
     if (monthsDiff > 0) {
       for (int i = 1; i <= monthsDiff; i++) {
-        var newDate = DateTime(
-          lastExpenseDate.year,
-          lastExpenseDate.month + i,
-          lastExpenseDate.day,
-        );
+        final targetMonth = lastExpenseDate.month + i;
+        final targetYear = lastExpenseDate.year + ((targetMonth - 1) ~/ 12);
+        final normalizedMonth = ((targetMonth - 1) % 12) + 1;
 
-        // Handle month overflow
-        while (newDate.month > 12) {
-          newDate = DateTime(newDate.year + 1, newDate.month - 12, newDate.day);
-        }
+        // Clamp day to last day of target month to avoid overflow
+        final lastDayOfMonth = DateTime(targetYear, normalizedMonth + 1, 0).day;
+        final clampedDay = lastExpenseDate.day > lastDayOfMonth
+            ? lastDayOfMonth
+            : lastExpenseDate.day;
+
+        final newDate = DateTime(targetYear, normalizedMonth, clampedDay);
 
         if (newDate.isBefore(today) || newDate.isAtSameMomentAs(today)) {
           _createRecurringExpense(expense, newDate);
@@ -219,10 +219,9 @@ class ExpenseController extends GetxController {
   }
 
   void _createRecurringExpense(ExpenseModel baseExpense, DateTime date) {
-    // Check if expense already exists for this date
     final existingExpense = expenses.any(
-      (e) =>
-          e.title == baseExpense.title &&
+          (e) =>
+      e.title == baseExpense.title &&
           e.amount == baseExpense.amount &&
           e.categoryId == baseExpense.categoryId &&
           _isSameDay(e.date, date),
@@ -240,11 +239,11 @@ class ExpenseController extends GetxController {
         tags: baseExpense.tags,
         isRecurring: true,
         recurringType: baseExpense.recurringType,
-        // Don't copy receipt path for recurring expenses
         receiptPath: null,
+        accountId: baseExpense.accountId,           // NEW: inherit account
+        parentRecurringId: baseExpense.id,           // NEW: link to parent
       );
 
-      // Add without notification to avoid spam
       _expenseBox.put(newExpense.id, newExpense);
     }
   }

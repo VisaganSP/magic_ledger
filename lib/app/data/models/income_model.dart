@@ -28,6 +28,14 @@ class IncomeModel extends HiveObject {
   @HiveField(7)
   String? recurringType; // monthly, weekly, etc.
 
+  // ─── NEW FIELDS (Phase 1) ────────────────────────────────
+
+  @HiveField(8)
+  String? accountId; // null = unassigned (backward compatible)
+
+  @HiveField(9)
+  String? parentRecurringId; // links auto-generated recurring entries to parent
+
   IncomeModel({
     required this.id,
     required this.title,
@@ -37,5 +45,7 @@ class IncomeModel extends HiveObject {
     this.description,
     this.isRecurring = false,
     this.recurringType,
+    this.accountId, // NEW
+    this.parentRecurringId, // NEW
   });
 }

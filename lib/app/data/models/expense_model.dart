@@ -37,6 +37,14 @@ class ExpenseModel extends HiveObject {
   @HiveField(10)
   String? recurringType; // daily, weekly, monthly
 
+  // ─── NEW FIELDS (Phase 1) ────────────────────────────────
+
+  @HiveField(11)
+  String? accountId; // null = unassigned (backward compatible)
+
+  @HiveField(12)
+  String? parentRecurringId; // links auto-generated recurring entries to parent
+
   ExpenseModel({
     required this.id,
     required this.title,
@@ -49,5 +57,7 @@ class ExpenseModel extends HiveObject {
     this.location,
     this.isRecurring = false,
     this.recurringType,
+    this.accountId, // NEW
+    this.parentRecurringId, // NEW
   });
 }

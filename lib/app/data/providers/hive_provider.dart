@@ -1,11 +1,15 @@
 import 'package:hive_flutter/hive_flutter.dart';
 
+import '../models/account_model.dart'; // NEW
 import '../models/budget_model.dart';
 import '../models/category_model.dart';
+import '../models/debt_model.dart';
 import '../models/expense_model.dart';
 import '../models/income_model.dart';
 import '../models/receipt_model.dart';
+import '../models/savings_goal_model.dart';
 import '../models/todo_model.dart';
+import '../models/transfer_model.dart'; // NEW
 
 class HiveProvider {
   static const String expenseBoxName = 'expenses';
@@ -15,7 +19,9 @@ class HiveProvider {
   static const String receiptBoxName = 'receipts';
   static const String settingsBoxName = 'settings';
   static const String incomeBoxName = 'income';
-  static const String autocompleteBoxName = 'autocomplete'; // NEW
+  static const String autocompleteBoxName = 'autocomplete';
+  static const String accountBoxName = 'accounts'; // NEW
+  static const String transferBoxName = 'transfers'; // NEW
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -39,6 +45,19 @@ class HiveProvider {
     if (!Hive.isAdapterRegistered(5)) {
       Hive.registerAdapter(IncomeModelAdapter());
     }
+    // ─── NEW ADAPTERS (Phase 1) ────────────────────────────
+    if (!Hive.isAdapterRegistered(6)) {
+      Hive.registerAdapter(AccountModelAdapter());
+    }
+    if (!Hive.isAdapterRegistered(7)) {
+      Hive.registerAdapter(TransferModelAdapter());
+    }
+    if (!Hive.isAdapterRegistered(8)) {
+      Hive.registerAdapter(SavingsGoalModelAdapter());
+    }
+    if (!Hive.isAdapterRegistered(9)) {
+      Hive.registerAdapter(DebtModelAdapter());
+    }
 
     // Open Boxes
     await openBoxes();
@@ -52,7 +71,12 @@ class HiveProvider {
     await Hive.openBox<ReceiptModel>(receiptBoxName);
     await Hive.openBox<IncomeModel>(incomeBoxName);
     await Hive.openBox(settingsBoxName);
-    await Hive.openBox(autocompleteBoxName); // NEW
+    await Hive.openBox(autocompleteBoxName);
+    await Hive.openBox<AccountModel>(accountBoxName); // NEW
+    await Hive.openBox<TransferModel>(transferBoxName); // NEW
+    await Hive.openBox<SavingsGoalModel>('savings_goals');
+    await Hive.openBox<DebtModel>('debts');
+    await Hive.openBox('recurring_tracking');
   }
 
   static Future<void> closeBoxes() async {
@@ -66,7 +90,8 @@ class HiveProvider {
       await getBudgetBox().clear();
       await getReceiptBox().clear();
       await getIncomeBox().clear();
-      // Don't clear autocomplete, categories, and settings
+      await getTransferBox().clear(); // NEW
+      // Don't clear autocomplete, categories, accounts, and settings
     } catch (e) {
       print('Error clearing data: $e');
       throw e;
@@ -101,8 +126,17 @@ class HiveProvider {
     return Hive.box(settingsBoxName);
   }
 
-  // NEW
   static Box getAutocompleteBox() {
     return Hive.box(autocompleteBoxName);
+  }
+
+  // ─── NEW BOXES (Phase 1) ────────────────────────────────
+
+  static Box<AccountModel> getAccountBox() {
+    return Hive.box<AccountModel>(accountBoxName);
+  }
+
+  static Box<TransferModel> getTransferBox() {
+    return Hive.box<TransferModel>(transferBoxName);
   }
 }

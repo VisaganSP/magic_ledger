@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 
 import '../../../data/providers/hive_provider.dart';
+import '../../../data/services/export_service.dart';
+import '../../account/controllers/account_controller.dart';
+import '../../category/controllers/category_controller.dart';
 import '../../expense/controllers/expense_controller.dart';
 import '../../home/controllers/home_controller.dart';
 import '../../income/controllers/income_controller.dart';
@@ -30,16 +33,12 @@ class SettingsController extends GetxController {
       defaultValue: true,
     );
 
-    // Only load dark mode setting if it exists
-    // Don't set a default - let the app use system theme
     if (_settingsBox.containsKey('enableDarkMode')) {
       enableDarkMode.value = _settingsBox.get('enableDarkMode');
-      // Only apply theme if user has explicitly set it
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _updateTheme();
       });
     } else {
-      // If no preference saved, check current theme mode
       final brightness = WidgetsBinding.instance.window.platformBrightness;
       enableDarkMode.value = brightness == Brightness.dark;
     }
@@ -61,7 +60,7 @@ class SettingsController extends GetxController {
     Get.snackbar(
       'Currency Updated',
       'Currency changed to $value',
-      backgroundColor: const Color(0xFF6BFF6B), // NeoBrutalismTheme.accentGreen
+      backgroundColor: const Color(0xFFB8E994),
       colorText: Colors.black,
       borderWidth: 3,
       borderColor: Colors.black,
@@ -78,7 +77,7 @@ class SettingsController extends GetxController {
       value
           ? 'You will receive push notifications'
           : 'Push notifications are disabled',
-      backgroundColor: const Color(0xFF6BCFFF), // NeoBrutalismTheme.accentBlue
+      backgroundColor: const Color(0xFF9DB4FF),
       colorText: Colors.black,
       borderWidth: 3,
       borderColor: Colors.black,
@@ -96,9 +95,7 @@ class SettingsController extends GetxController {
       'Theme Changed',
       value ? 'Dark mode enabled' : 'Light mode enabled',
       backgroundColor:
-          value
-              ? Colors.grey[800]!
-              : const Color(0xFFFFD93D), // NeoBrutalismTheme.accentYellow
+      value ? Colors.grey[800]! : const Color(0xFFE8CCFF),
       colorText: value ? Colors.white : Colors.black,
       borderWidth: 3,
       borderColor: Colors.black,
@@ -107,13 +104,11 @@ class SettingsController extends GetxController {
   }
 
   void _updateTheme() {
-    // Only change theme if user has set a preference
     if (_settingsBox.containsKey('enableDarkMode')) {
       Get.changeThemeMode(
         enableDarkMode.value ? ThemeMode.dark : ThemeMode.light,
       );
     }
-    // Otherwise, let it use system theme
   }
 
   Future<void> updateBackupFrequency(String value) async {
@@ -128,77 +123,77 @@ class SettingsController extends GetxController {
 
   Future<void> clearAllData() async {
     try {
-      // Show loading indicator
       Get.dialog(
         const Center(child: CircularProgressIndicator()),
         barrierDismissible: false,
       );
 
-      // First, clear the data in memory from all controllers
+      // Clear in-memory data from all controllers
       try {
         if (Get.isRegistered<ExpenseController>()) {
-          final expenseController = Get.find<ExpenseController>();
-          expenseController.expenses.clear();
+          Get.find<ExpenseController>().expenses.clear();
         }
       } catch (_) {}
 
       try {
         if (Get.isRegistered<TodoController>()) {
-          final todoController = Get.find<TodoController>();
-          todoController.todos.clear();
+          Get.find<TodoController>().todos.clear();
         }
       } catch (_) {}
 
       try {
         if (Get.isRegistered<IncomeController>()) {
-          final incomeController = Get.find<IncomeController>();
-          incomeController.incomes.clear();
+          Get.find<IncomeController>().incomes.clear();
         }
       } catch (_) {}
 
-      // Clear the Hive boxes
+      try {
+        if (Get.isRegistered<AccountController>()) {
+          Get.find<AccountController>().transfers.clear();
+        }
+      } catch (_) {}
+
+      // Clear Hive boxes
       await HiveProvider.clearAllData();
 
-      // Reset home controller stats
+      // Reset home controller stats (Phase 2 field names)
       try {
         if (Get.isRegistered<HomeController>()) {
           final homeController = Get.find<HomeController>();
-          homeController.totalExpensesThisMonth.value = 0.0;
-          homeController.totalIncomeThisMonth.value = 0.0;
+          homeController.totalExpenses.value = 0.0;
+          homeController.totalIncome.value = 0.0;
+          homeController.balance.value = 0.0;
           homeController.pendingTodos.value = 0;
           homeController.savingsPercentage.value = 0.0;
-          homeController.pendingTodos.value = 0;
+          homeController.totalTransactions.value = 0;
+          homeController.dailyAvgExpense.value = 0.0;
+          homeController.prevMonthExpenses.value = 0.0;
+          homeController.prevMonthIncome.value = 0.0;
+          homeController.expenseChangePercent.value = 0.0;
+          homeController.incomeChangePercent.value = 0.0;
         }
       } catch (_) {}
 
-      // Wait a bit to ensure everything is cleared
       await Future.delayed(const Duration(milliseconds: 300));
 
-      // Close loading dialog
       Get.back();
 
-      // Force delete all controller instances
       Get.deleteAll(force: true);
 
-      // Navigate to home with a fresh start
       Get.offAllNamed('/home');
 
-      // Show success message after navigation
       await Future.delayed(const Duration(milliseconds: 500));
 
       Get.snackbar(
         'Success',
         'All data has been cleared',
-        backgroundColor: const Color(
-          0xFF6BFF6B,
-        ), // NeoBrutalismTheme.accentGreen
+        backgroundColor: const Color(0xFFB8E994),
         colorText: Colors.black,
         borderWidth: 3,
         borderColor: Colors.black,
         duration: const Duration(seconds: 3),
       );
     } catch (e) {
-      // Close loading dialog if still open
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }
@@ -215,13 +210,19 @@ class SettingsController extends GetxController {
   }
 
   Future<void> exportData() async {
-    // Simulate export functionality
     await Future.delayed(const Duration(seconds: 2));
+
+    ExportService().exportAll(
+      expenses: Get.find<ExpenseController>().expenses,
+      incomes: Get.find<IncomeController>().incomes,
+      categories: Get.find<CategoryController>().categories,
+      accounts: Get.find<AccountController>().accounts,
+    );
 
     Get.snackbar(
       'Export Complete',
       'Your data has been exported successfully',
-      backgroundColor: const Color(0xFF6BFF6B), // NeoBrutalismTheme.accentGreen
+      backgroundColor: const Color(0xFFB8E994),
       colorText: Colors.black,
       borderWidth: 3,
       borderColor: Colors.black,
@@ -230,13 +231,12 @@ class SettingsController extends GetxController {
   }
 
   Future<void> importData() async {
-    // Simulate import functionality
     await Future.delayed(const Duration(seconds: 2));
 
     Get.snackbar(
       'Import Complete',
       'Your data has been imported successfully',
-      backgroundColor: const Color(0xFFFF6BC6), // NeoBrutalismTheme.accentPink
+      backgroundColor: const Color(0xFFFDB5D6),
       colorText: Colors.black,
       borderWidth: 3,
       borderColor: Colors.black,
@@ -244,7 +244,6 @@ class SettingsController extends GetxController {
     );
   }
 
-  // Currency symbol helper
   String getCurrencySymbol() {
     switch (currency.value) {
       case 'USD':
