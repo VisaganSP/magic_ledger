@@ -28,13 +28,15 @@ class ExpenseModelAdapter extends TypeAdapter<ExpenseModel> {
       location: fields[8] as String?,
       isRecurring: fields[9] as bool,
       recurringType: fields[10] as String?,
+      accountId: fields[11] as String?,
+      parentRecurringId: fields[12] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ExpenseModel obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -56,7 +58,11 @@ class ExpenseModelAdapter extends TypeAdapter<ExpenseModel> {
       ..writeByte(9)
       ..write(obj.isRecurring)
       ..writeByte(10)
-      ..write(obj.recurringType);
+      ..write(obj.recurringType)
+      ..writeByte(11)
+      ..write(obj.accountId)
+      ..writeByte(12)
+      ..write(obj.parentRecurringId);
   }
 
   @override

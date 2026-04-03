@@ -185,23 +185,23 @@ class IncomeController extends GetxController {
       income.date.day,
     );
 
-    // Calculate months difference
     int monthsDiff =
         (today.year - lastIncomeDate.year) * 12 +
-        (today.month - lastIncomeDate.month);
+            (today.month - lastIncomeDate.month);
 
     if (monthsDiff > 0) {
       for (int i = 1; i <= monthsDiff; i++) {
-        var newDate = DateTime(
-          lastIncomeDate.year,
-          lastIncomeDate.month + i,
-          lastIncomeDate.day,
-        );
+        final targetMonth = lastIncomeDate.month + i;
+        final targetYear = lastIncomeDate.year + ((targetMonth - 1) ~/ 12);
+        final normalizedMonth = ((targetMonth - 1) % 12) + 1;
 
-        // Handle month overflow
-        while (newDate.month > 12) {
-          newDate = DateTime(newDate.year + 1, newDate.month - 12, newDate.day);
-        }
+        // Clamp day to last day of target month to avoid overflow
+        final lastDayOfMonth = DateTime(targetYear, normalizedMonth + 1, 0).day;
+        final clampedDay = lastIncomeDate.day > lastDayOfMonth
+            ? lastDayOfMonth
+            : lastIncomeDate.day;
+
+        final newDate = DateTime(targetYear, normalizedMonth, clampedDay);
 
         if (newDate.isBefore(today) || newDate.isAtSameMomentAs(today)) {
           _createRecurringIncome(income, newDate);
@@ -235,10 +235,9 @@ class IncomeController extends GetxController {
   }
 
   void _createRecurringIncome(IncomeModel baseIncome, DateTime date) {
-    // Check if income already exists for this date
     final existingIncome = incomes.any(
-      (i) =>
-          i.title == baseIncome.title &&
+          (i) =>
+      i.title == baseIncome.title &&
           i.amount == baseIncome.amount &&
           i.source == baseIncome.source &&
           _isSameDay(i.date, date),
@@ -254,9 +253,10 @@ class IncomeController extends GetxController {
         description: baseIncome.description,
         isRecurring: true,
         recurringType: baseIncome.recurringType,
+        accountId: baseIncome.accountId,           // NEW: inherit account
+        parentRecurringId: baseIncome.id,           // NEW: link to parent
       );
 
-      // Add without notification to avoid spam
       _incomeBox.put(newIncome.id, newIncome);
     }
   }

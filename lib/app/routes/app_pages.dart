@@ -1,9 +1,18 @@
 import 'package:get/get.dart';
 
+import '../bindings/budget_binding.dart';
 import '../bindings/expense_binding.dart';
+import '../bindings/notification_inbox_binding.dart';
 import '../bindings/todo_binding.dart';
+import '../modules/analytics/views/financial_calendar_view.dart';
+import '../modules/budget/views/add_budget_view.dart';
+import '../modules/budget/views/budget_view.dart';
+import '../modules/category/controllers/category_controller.dart';
 import '../modules/category/views/add_category_view.dart';
 import '../modules/category/views/category_view.dart';
+import '../modules/debt/controllers/debt_controller.dart';
+import '../modules/debt/views/add_debt_view.dart';
+import '../modules/debt/views/debt_view.dart';
 import '../modules/expense/views/add_expense_view.dart';
 import '../modules/expense/views/expense_detail_view.dart';
 import '../modules/home/bindings/home_binding.dart';
@@ -11,10 +20,18 @@ import '../modules/home/views/home_view.dart';
 import '../modules/income/bindings/income_binding.dart';
 import '../modules/income/views/add_income_view.dart';
 import '../modules/income/views/income_detail_view.dart';
+import '../modules/notifications/views/notification_inbox_view.dart';
+import '../modules/savings/controllers/savings_controller.dart';
+import '../modules/savings/views/add_savings_goal_view.dart';
+import '../modules/savings/views/savings_view.dart';
 import '../modules/settings/views/settings_view.dart';
 import '../modules/splash/views/splash_view.dart';
 import '../modules/todo/views/add_todo_view.dart';
 import '../modules/todo/views/todo_detail_view.dart';
+import '../bindings/account_binding.dart';
+import '../modules/account/views/account_view.dart';
+import '../modules/account/views/add_account_view.dart';
+
 import 'app_routes.dart';
 
 class AppPages {
@@ -74,6 +91,79 @@ class AppPages {
       page: () => IncomeDetailView(),
       binding: IncomeBinding(),
       transition: Transition.rightToLeft,
+    ),
+    // BUDGET ROUTES
+    GetPage(
+      name: Routes.categories,
+      page: () => CategoryView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => CategoryController());
+      }),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.budgets,
+      page: () => BudgetView(),
+      binding: BudgetBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.ADD_BUDGET,
+      page: () => AddBudgetView(),
+      binding: BudgetBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.EDIT_BUDGET,
+      page: () => AddBudgetView(),
+      binding: BudgetBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: '/accounts',
+      page: () => const AccountView(),
+      binding: AccountBinding(),
+    ),
+    GetPage(
+      name: '/add-account',
+      page: () => const AddAccountView(),
+      binding: AccountBinding(),
+    ),
+    // Savings
+    GetPage(
+      name: '/savings',
+      page: () => const SavingsView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<SavingsController>(() => SavingsController());
+      }),
+    ),
+    GetPage(
+      name: '/add-savings-goal',
+      page: () => const AddSavingsGoalView(),
+    ),
+
+    // Debt
+    GetPage(
+      name: '/debt',
+      page: () => const DebtView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<DebtController>(() => DebtController());
+      }),
+    ),
+    GetPage(
+      name: '/add-debt',
+      page: () => const AddDebtView(),
+    ),
+
+    // Financial Calendar
+    GetPage(
+      name: '/financial-calendar',
+      page: () => const FinancialCalendarView(),
+    ),
+    GetPage(
+      name: '/notifications',
+      page: () => const NotificationInboxView(),
+      binding: NotificationInboxBinding(),
     ),
   ];
 }

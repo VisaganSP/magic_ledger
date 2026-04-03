@@ -5,10 +5,10 @@ part 'budget_model.g.dart';
 @HiveType(typeId: 3)
 class BudgetModel extends HiveObject {
   @HiveField(0)
-  String id;
+  final String id;
 
   @HiveField(1)
-  String categoryId;
+  String? categoryId; // null means overall budget
 
   @HiveField(2)
   double amount;
@@ -20,18 +20,22 @@ class BudgetModel extends HiveObject {
   DateTime startDate;
 
   @HiveField(5)
-  DateTime endDate;
+  DateTime? endDate;
 
   @HiveField(6)
   bool isActive;
 
+  @HiveField(7)
+  String? notes;
+
   BudgetModel({
     required this.id,
-    required this.categoryId,
+    this.categoryId,
     required this.amount,
     required this.period,
     required this.startDate,
-    required this.endDate,
+    this.endDate,
     this.isActive = true,
+    this.notes,
   });
 }

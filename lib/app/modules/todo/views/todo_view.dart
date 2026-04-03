@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
@@ -17,710 +19,582 @@ class TodoView extends GetView<TodoController> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor:
-          isDark
-              ? NeoBrutalismTheme.darkBackground
-              : NeoBrutalismTheme.primaryWhite,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Get.toNamed('/add-todo'),
-        backgroundColor: _getThemedColor(
-          NeoBrutalismTheme.accentPurple,
-          isDark,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: NeoBrutalismTheme.primaryBlack, width: 3),
-        ),
-        child: const Icon(
-          Icons.add,
-          size: 32,
-          color: NeoBrutalismTheme.primaryBlack,
-        ),
-      ).animate().scale(delay: 500.ms),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHeader(isDark),
-            _buildStats(isDark),
-            _buildFilterTabs(isDark),
-            _buildDateFilterSection(isDark),
-            _buildTodoList(isDark),
-            const SizedBox(height: 80), // Space for FAB
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Helper method to get muted colors for dark theme
-  Color _getThemedColor(Color color, bool isDark) {
-    if (!isDark) return color;
-
-    // Return slightly muted versions of colors for dark theme
-    if (color == NeoBrutalismTheme.accentYellow) {
-      return Color(0xFFE6B800); // Slightly darker yellow
-    } else if (color == NeoBrutalismTheme.accentPink) {
-      return Color(0xFFE667A0); // Slightly darker pink
-    } else if (color == NeoBrutalismTheme.accentBlue) {
-      return Color(0xFF4D94FF); // Slightly darker blue
-    } else if (color == NeoBrutalismTheme.accentGreen) {
-      return Color(0xFF00CC66); // Slightly darker green
-    } else if (color == NeoBrutalismTheme.accentOrange) {
-      return Color(0xFFFF8533); // Slightly darker orange
-    } else if (color == NeoBrutalismTheme.accentPurple) {
-      return Color(0xFF9966FF); // Slightly darker purple
-    }
-    return color;
-  }
-
-  Widget _buildHeader(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Text(
-        'TODOS',
-        style: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.w900,
-          color:
-              isDark
-                  ? NeoBrutalismTheme.darkText
-                  : NeoBrutalismTheme.primaryBlack,
-        ),
-      ),
-    ).animate().fadeIn().slideX(begin: -0.2, end: 0);
-  }
-
-  Widget _buildStats(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Obx(
-        () => Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                'PENDING',
-                controller.pendingCount.value.toString(),
-                _getThemedColor(NeoBrutalismTheme.accentOrange, isDark),
-                Icons.pending_actions,
-                isDark,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                'COMPLETED',
-                controller.completedCount.value.toString(),
-                _getThemedColor(NeoBrutalismTheme.accentGreen, isDark),
-                Icons.check_circle,
-                isDark,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                'OVERDUE',
-                controller.overdueCount.value.toString(),
-                _getThemedColor(NeoBrutalismTheme.accentPink, isDark),
-                Icons.warning,
-                isDark,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ).animate().fadeIn(delay: 200.ms);
-  }
-
-  Widget _buildStatCard(
-    String label,
-    String value,
-    Color color,
-    IconData icon,
-    bool isDark,
-  ) {
-    return NeoCard(
-      color: color,
-      padding: const EdgeInsets.all(12),
-      borderColor: NeoBrutalismTheme.primaryBlack,
-      child: Column(
-        children: [
-          Icon(icon, size: 24, color: NeoBrutalismTheme.primaryBlack),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: NeoBrutalismTheme.primaryBlack,
-            ),
-          ),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: NeoBrutalismTheme.primaryBlack,
-            ),
+      backgroundColor: isDark ? NeoBrutalismTheme.darkBackground : NeoBrutalismTheme.primaryWhite,
+      body: CustomScrollView(
+        slivers: [
+          _buildAppBar(isDark),
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: Obx(() => SliverList(delegate: SliverChildListDelegate([
+              _buildProductivityDashboard(isDark),
+              const SizedBox(height: 16),
+              _buildQuickStats(isDark),
+              const SizedBox(height: 16),
+              _buildFilterRow(isDark),
+              const SizedBox(height: 12),
+              _buildGroupedTodoList(isDark),
+              const SizedBox(height: 100),
+            ]))),
           ),
         ],
       ),
+      floatingActionButton: _buildFab(isDark),
     );
   }
 
-  Widget _buildFilterTabs(bool isDark) {
+  // ─── APP BAR ─────────────────────────────────────────────
+
+  SliverAppBar _buildAppBar(bool isDark) {
+    return SliverAppBar(
+      expandedHeight: 90, pinned: true,
+      backgroundColor: NeoBrutalismTheme.getThemedColor(NeoBrutalismTheme.accentPurple, isDark),
+      foregroundColor: NeoBrutalismTheme.primaryBlack,
+      flexibleSpace: const FlexibleSpaceBar(
+        title: Text('TODOS', style: TextStyle(fontWeight: FontWeight.w900,
+            fontSize: 20, color: NeoBrutalismTheme.primaryBlack)),
+        titlePadding: EdgeInsets.only(left: 56, bottom: 14),
+      ),
+      actions: [
+        Obx(() {
+          final overdue = controller.overdueCount.value;
+          return overdue > 0 ? Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: NeoBrutalismTheme.primaryBlack, width: 2)),
+              child: Text('$overdue OVERDUE', style: const TextStyle(fontSize: 10,
+                  fontWeight: FontWeight.w900, color: Colors.white)),
+            )),
+          ) : const SizedBox();
+        }),
+      ],
+    );
+  }
+
+  // ─── PRODUCTIVITY DASHBOARD ──────────────────────────────
+
+  Widget _buildProductivityDashboard(bool isDark) {
+    final progress = controller.todayProgress;
+    final grade = controller.productivityGrade;
+    final streakVal = controller.streak.value;
+    final completed = controller.todayCompleted.value;
+    final goal = controller.dailyGoal.value;
+
     return Container(
       padding: const EdgeInsets.all(16),
-      child: Obx(
-        () => Row(
-          children: [
-            Expanded(
-              child: _buildFilterTab(
-                'ALL',
-                'all',
-                controller.selectedFilter.value == 'all',
-                isDark,
-              ),
+      decoration: NeoBrutalismTheme.neoBox(
+          color: NeoBrutalismTheme.getThemedColor(NeoBrutalismTheme.accentYellow, isDark),
+          borderColor: NeoBrutalismTheme.primaryBlack, offset: 5),
+      child: Row(children: [
+        // Progress ring
+        SizedBox(width: 80, height: 80, child: CustomPaint(
+          painter: _ProgressRingPainter(progress / 100, _gradeColor(grade)),
+          child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(grade, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900,
+                color: _gradeColor(grade))),
+            Text('${progress.toStringAsFixed(0)}%', style: const TextStyle(fontSize: 10,
+                fontWeight: FontWeight.w800, color: NeoBrutalismTheme.primaryBlack)),
+          ])),
+        )),
+        const SizedBox(width: 16),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(color: NeoBrutalismTheme.primaryBlack,
+                  borderRadius: BorderRadius.circular(4)),
+              child: const Text('TODAY', style: TextStyle(fontSize: 9,
+                  fontWeight: FontWeight.w900, color: Colors.white)),
             ),
+            const Spacer(),
+            GestureDetector(
+              onTap: () => _showGoalDialog(isDark),
+              child: Row(children: [
+                const Icon(Icons.flag, size: 14, color: NeoBrutalismTheme.primaryBlack),
+                const SizedBox(width: 4),
+                Text('Goal: $goal', style: const TextStyle(fontSize: 11,
+                    fontWeight: FontWeight.w700, color: NeoBrutalismTheme.primaryBlack)),
+              ]),
+            ),
+          ]),
+          const SizedBox(height: 8),
+          Text('$completed of $goal tasks done', style: const TextStyle(fontSize: 15,
+              fontWeight: FontWeight.w900, color: NeoBrutalismTheme.primaryBlack)),
+          const SizedBox(height: 6),
+          Row(children: [
+            _miniPill('\u{1F525} $streakVal day streak', const Color(0xFFFFB49A), isDark),
             const SizedBox(width: 8),
-            Expanded(
-              child: _buildFilterTab(
-                'PENDING',
-                'pending',
-                controller.selectedFilter.value == 'pending',
-                isDark,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildFilterTab(
-                'COMPLETED',
-                'completed',
-                controller.selectedFilter.value == 'completed',
-                isDark,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ).animate().fadeIn(delay: 400.ms);
+            _miniPill('${controller.pendingCount.value} pending', const Color(0xFFBFE3F0), isDark),
+          ]),
+        ])),
+      ]),
+    ).animate().fadeIn(duration: 300.ms);
   }
 
-  Widget _buildFilterTab(
-    String label,
-    String value,
-    bool isSelected,
-    bool isDark,
-  ) {
-    return GestureDetector(
-      onTap: () => controller.changeFilter(value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: NeoBrutalismTheme.neoBox(
-          color:
-              isSelected
-                  ? _getThemedColor(NeoBrutalismTheme.accentBlue, isDark)
-                  : (isDark
-                      ? NeoBrutalismTheme.darkSurface
-                      : NeoBrutalismTheme.primaryWhite),
-          offset: isSelected ? 2 : 5,
-          borderColor: NeoBrutalismTheme.primaryBlack,
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-              color:
-                  isSelected
-                      ? NeoBrutalismTheme.primaryBlack
-                      : (isDark
-                          ? NeoBrutalismTheme.darkText
-                          : NeoBrutalismTheme.primaryBlack),
-            ),
-          ),
-        ),
-      ),
+  Widget _miniPill(String text, Color color, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: NeoBrutalismTheme.primaryBlack, width: 1.5)),
+      child: Text(text, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800,
+          color: NeoBrutalismTheme.primaryBlack)),
     );
   }
 
-  // New date filter section
-  Widget _buildDateFilterSection(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Obx(() {
-        final dateFilter = controller.dateFilter.value;
-        final hasDateFilter =
-            dateFilter['start'] != null || dateFilter['end'] != null;
+  Color _gradeColor(String g) {
+    switch (g) {
+      case 'S': return const Color(0xFFFF6B9D);
+      case 'A': return const Color(0xFF00CC66);
+      case 'B': return const Color(0xFF4D94FF);
+      case 'C': return const Color(0xFFFF8533);
+      default: return Colors.grey;
+    }
+  }
 
-        return GestureDetector(
-          onTap: () => _showDateRangePicker(Get.context!, isDark),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: NeoBrutalismTheme.neoBox(
-              color:
-                  hasDateFilter
-                      ? _getThemedColor(
-                        Color(0xFF00FFFF),
-                        isDark,
-                      ).withOpacity(0.3)
-                      : (isDark
-                          ? NeoBrutalismTheme.darkSurface
-                          : NeoBrutalismTheme.primaryWhite),
-              borderColor: NeoBrutalismTheme.primaryBlack,
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.date_range,
-                  color:
-                      isDark
-                          ? NeoBrutalismTheme.darkText
-                          : NeoBrutalismTheme.primaryBlack,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    hasDateFilter
-                        ? _formatDateRange(
-                          dateFilter['start'],
-                          dateFilter['end'],
-                        )
-                        : 'Filter by date range',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color:
-                          isDark
-                              ? NeoBrutalismTheme.darkText
-                              : NeoBrutalismTheme.primaryBlack,
-                    ),
-                  ),
-                ),
-                if (hasDateFilter)
-                  IconButton(
-                    icon: Icon(
-                      Icons.clear,
-                      size: 20,
-                      color:
-                          isDark
-                              ? NeoBrutalismTheme.darkText
-                              : NeoBrutalismTheme.primaryBlack,
-                    ),
-                    onPressed: () => controller.clearDateFilter(),
-                    padding: EdgeInsets.zero,
-                    constraints: BoxConstraints(),
-                  ),
-              ],
+  // ─── QUICK STATS ─────────────────────────────────────────
+
+  Widget _buildQuickStats(bool isDark) {
+    return Row(children: [
+      _statChip('${controller.pendingCount.value}', 'Pending',
+          Icons.pending_actions, const Color(0xFFFFB49A), isDark),
+      const SizedBox(width: 10),
+      _statChip('${controller.completedCount.value}', 'Done',
+          Icons.check_circle, const Color(0xFFB8E994), isDark),
+      const SizedBox(width: 10),
+      _statChip('${controller.overdueCount.value}', 'Overdue',
+          Icons.warning_amber, const Color(0xFFE57373), isDark),
+    ]).animate().fadeIn(delay: 100.ms);
+  }
+
+  Widget _statChip(String val, String label, IconData icon, Color color, bool isDark) {
+    return Expanded(child: Container(
+      padding: const EdgeInsets.all(10),
+      decoration: NeoBrutalismTheme.neoBox(color: color,
+          borderColor: NeoBrutalismTheme.primaryBlack, offset: 3),
+      child: Row(children: [
+        Icon(icon, size: 18, color: NeoBrutalismTheme.primaryBlack),
+        const SizedBox(width: 6),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(val, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900,
+              color: NeoBrutalismTheme.primaryBlack)),
+          Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700,
+              color: Colors.black.withOpacity(0.5))),
+        ]),
+      ]),
+    ));
+  }
+
+  // ─── FILTER ROW ──────────────────────────────────────────
+
+  Widget _buildFilterRow(bool isDark) {
+    return SizedBox(height: 34, child: ListView(
+      scrollDirection: Axis.horizontal,
+      children: ['all', 'pending', 'completed', 'overdue'].map((f) {
+        final isActive = controller.selectedFilter.value == f;
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: GestureDetector(
+            onTap: () => controller.changeFilter(f),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: isActive ? NeoBrutalismTheme.primaryBlack
+                    : (isDark ? NeoBrutalismTheme.darkSurface : NeoBrutalismTheme.primaryWhite),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: NeoBrutalismTheme.primaryBlack, width: 2),
+              ),
+              child: Text(f.toUpperCase(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800,
+                  color: isActive ? Colors.white
+                      : (isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack))),
             ),
           ),
         );
-      }),
-    ).animate().fadeIn(delay: 500.ms);
+      }).toList(),
+    )).animate().fadeIn(delay: 200.ms);
   }
 
-  String _formatDateRange(DateTime? start, DateTime? end) {
-    if (start == null && end == null) return 'Filter by date range';
+  // ─── GROUPED TODO LIST ───────────────────────────────────
 
-    final format = (DateTime date) => '${date.day}/${date.month}/${date.year}';
+  Widget _buildGroupedTodoList(bool isDark) {
+    final groups = controller.getGroupedTodos();
 
-    if (start != null && end != null) {
-      return '${format(start)} - ${format(end)}';
-    } else if (start != null) {
-      return 'From ${format(start)}';
-    } else {
-      return 'Until ${format(end!)}';
-    }
-  }
+    if (groups.isEmpty) return _buildEmptyState(isDark);
 
-  void _showDateRangePicker(BuildContext context, bool isDark) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => NeoDateRangePicker(
-            initialStartDate: controller.dateFilter.value['start'],
-            initialEndDate: controller.dateFilter.value['end'],
-            firstDate: DateTime(2020),
-            lastDate: DateTime(2030),
-            onDateRangeSelected: (start, end) {
-              controller.setDateFilter(start, end);
-            },
+    final groupColors = {
+      'Overdue': const Color(0xFFE57373),
+      'Today': const Color(0xFFFDD663),
+      'Tomorrow': const Color(0xFFBFE3F0),
+      'This week': const Color(0xFFB8E994),
+      'Later': const Color(0xFFDCC9E8),
+      'No date': const Color(0xFFB0BEC5),
+      'Completed': const Color(0xFFD4E4D1),
+    };
+
+    final groupIcons = {
+      'Overdue': Icons.warning_amber,
+      'Today': Icons.today,
+      'Tomorrow': Icons.calendar_today,
+      'This week': Icons.date_range,
+      'Later': Icons.schedule,
+      'No date': Icons.remove_circle_outline,
+      'Completed': Icons.check_circle,
+    };
+
+    return Column(children: groups.entries.map((entry) {
+      final name = entry.key;
+      final items = entry.value;
+      final color = groupColors[name] ?? const Color(0xFFB0BEC5);
+      final icon = groupIcons[name] ?? Icons.list;
+
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const SizedBox(height: 12),
+        // Group header
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: NeoBrutalismTheme.primaryBlack, width: 2)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(icon, size: 14, color: NeoBrutalismTheme.primaryBlack),
+              const SizedBox(width: 6),
+              Text('${name.toUpperCase()} (${items.length})',
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900,
+                      color: NeoBrutalismTheme.primaryBlack)),
+            ]),
           ),
-    );
-  }
-
-  Widget _buildTodoList(bool isDark) {
-    return Obx(() {
-      final todos = controller.getFilteredTodos();
-
-      if (todos.isEmpty) {
-        return _buildEmptyState(isDark);
-      }
-
-      return ListView.builder(
-        padding: const EdgeInsets.all(16),
-        physics: const NeverScrollableScrollPhysics(), // Disable inner scroll
-        shrinkWrap: true, // Allow ListView to size itself
-        itemCount: todos.length,
-        itemBuilder: (context, index) {
-          final todo = todos[index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: _buildTodoCard(todo, index, isDark),
-          );
-        },
-      );
-    });
-  }
-
-  Widget _buildEmptyState(bool isDark) {
-    return Container(
-      height: 400, // Fixed height for empty state
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: NeoBrutalismTheme.neoBox(
-                color: _getThemedColor(NeoBrutalismTheme.accentPurple, isDark),
-                borderColor: NeoBrutalismTheme.primaryBlack,
+          if (name != 'Completed' && items.length > 1) ...[
+            const Spacer(),
+            GestureDetector(
+              onTap: () { controller.completeAll(items); },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(color: const Color(0xFFB8E994),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: NeoBrutalismTheme.primaryBlack, width: 1.5)),
+                child: const Text('DONE ALL', style: TextStyle(fontSize: 9,
+                    fontWeight: FontWeight.w900, color: NeoBrutalismTheme.primaryBlack)),
               ),
-              child: const Icon(
-                Icons.task_alt,
-                size: 60,
-                color: NeoBrutalismTheme.primaryBlack,
-              ),
-            ).animate().scale(duration: 500.ms),
-            const SizedBox(height: 24),
-            Text(
-              'NO TODOS',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color:
-                    isDark
-                        ? NeoBrutalismTheme.darkText
-                        : NeoBrutalismTheme.primaryBlack,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Create your first todo',
-              style: TextStyle(
-                fontSize: 16,
-                color: isDark ? Colors.grey[400] : Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 24),
-            NeoButton(
-              text: 'ADD TODO',
-              onPressed: () => Get.toNamed('/add-todo'),
-              color: _getThemedColor(NeoBrutalismTheme.accentPurple, isDark),
-              icon: Icons.add,
             ),
           ],
-        ),
-      ),
-    );
+        ]),
+        const SizedBox(height: 8),
+        ...items.asMap().entries.map((e) => Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: _buildTodoCard(e.value, e.key, isDark),
+        )),
+      ]);
+    }).toList());
   }
 
-  Widget _buildTodoCard(TodoModel todo, int index, bool isDark) {
-    final isOverdue =
-        todo.dueDate != null &&
-        todo.dueDate!.isBefore(DateTime.now()) &&
-        !todo.isCompleted;
+  // ─── TODO CARD ───────────────────────────────────────────
 
-    // Enhanced color scheme for better visibility
-    Color cardColor = _getTodoCardColor(todo, isDark);
+  Widget _buildTodoCard(TodoModel todo, int index, bool isDark) {
+    final isOverdue = todo.dueDate != null && todo.dueDate!.isBefore(DateTime.now()) && !todo.isCompleted;
 
     return Dismissible(
       key: Key(todo.id),
-      direction: DismissDirection.endToStart,
+      direction: DismissDirection.horizontal,
       background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        decoration: NeoBrutalismTheme.neoBox(
-          color: _getThemedColor(NeoBrutalismTheme.accentPink, isDark),
-          borderColor: NeoBrutalismTheme.primaryBlack,
-        ),
-        child: const Icon(
-          Icons.delete,
-          color: NeoBrutalismTheme.primaryWhite,
-          size: 32,
-        ),
+        alignment: Alignment.centerLeft, padding: const EdgeInsets.only(left: 20),
+        decoration: NeoBrutalismTheme.neoBox(color: const Color(0xFFB8E994),
+            borderColor: NeoBrutalismTheme.primaryBlack),
+        child: const Row(children: [
+          Icon(Icons.check, color: NeoBrutalismTheme.primaryBlack, size: 28),
+          SizedBox(width: 8),
+          Text('COMPLETE', style: TextStyle(fontWeight: FontWeight.w900,
+              color: NeoBrutalismTheme.primaryBlack)),
+        ]),
       ),
-      onDismissed: (direction) {
-        controller.deleteTodo(todo.id);
+      secondaryBackground: Container(
+        alignment: Alignment.centerRight, padding: const EdgeInsets.only(right: 20),
+        decoration: NeoBrutalismTheme.neoBox(color: const Color(0xFFE57373),
+            borderColor: NeoBrutalismTheme.primaryBlack),
+        child: const Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+          Text('DELETE', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
+          SizedBox(width: 8),
+          Icon(Icons.delete, color: Colors.white, size: 28),
+        ]),
+      ),
+      confirmDismiss: (dir) async {
+        if (dir == DismissDirection.startToEnd) {
+          controller.toggleTodo(todo);
+          return false;
+        }
+        return true;
       },
-      child: NeoCard(
-        color: cardColor,
+      onDismissed: (_) => controller.deleteTodo(todo.id),
+      child: GestureDetector(
         onTap: () => Get.toNamed('/todo-detail', arguments: todo),
-        borderColor: NeoBrutalismTheme.primaryBlack,
-        child: Row(
-          children: [
-            // Custom Neo Brutalism Checkbox
+        child: Container(
+          decoration: NeoBrutalismTheme.neoBox(
+              color: isDark ? NeoBrutalismTheme.darkSurface : NeoBrutalismTheme.primaryWhite,
+              borderColor: NeoBrutalismTheme.primaryBlack, offset: 4),
+          child: Padding(padding: const EdgeInsets.all(12), child: Row(children: [
+            // Checkbox
             GestureDetector(
               onTap: () => controller.toggleTodo(todo),
               child: Container(
-                width: 28,
-                height: 28,
+                width: 26, height: 26,
                 decoration: BoxDecoration(
-                  color:
-                      todo.isCompleted
-                          ? _getThemedColor(
-                            NeoBrutalismTheme.accentGreen,
-                            isDark,
-                          )
-                          : (isDark
-                              ? NeoBrutalismTheme.darkSurface
-                              : NeoBrutalismTheme.primaryWhite),
-                  border: Border.all(
-                    color: NeoBrutalismTheme.primaryBlack,
-                    width: 3,
-                  ),
-                  borderRadius: BorderRadius.circular(4),
-                  boxShadow: [
-                    BoxShadow(
-                      color:
-                          isDark
-                              ? Colors.black
-                              : NeoBrutalismTheme.primaryBlack,
-                      offset: const Offset(2, 2),
-                    ),
-                  ],
+                  color: todo.isCompleted
+                      ? NeoBrutalismTheme.getThemedColor(NeoBrutalismTheme.accentGreen, isDark)
+                      : (isDark ? NeoBrutalismTheme.darkBackground : NeoBrutalismTheme.primaryWhite),
+                  border: Border.all(color: NeoBrutalismTheme.primaryBlack, width: 2.5),
+                  borderRadius: BorderRadius.circular(6),
                 ),
-                child:
-                    todo.isCompleted
-                        ? const Icon(
-                          Icons.check,
-                          size: 18,
-                          color: NeoBrutalismTheme.primaryBlack,
-                        )
-                        : null,
+                child: todo.isCompleted
+                    ? const Icon(Icons.check, size: 16, color: NeoBrutalismTheme.primaryBlack) : null,
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    todo.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      color: _getTextColor(cardColor, isDark),
-                      decoration:
-                          todo.isCompleted ? TextDecoration.lineThrough : null,
-                    ),
-                  ),
-                  if (todo.description != null &&
-                      todo.description!.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      todo.description!,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: _getTextColor(
-                          cardColor,
-                          isDark,
-                        ).withOpacity(0.8),
-                        decoration:
-                            todo.isCompleted
-                                ? TextDecoration.lineThrough
-                                : null,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      if (todo.dueDate != null) ...[
-                        GestureDetector(
-                          onTap:
-                              () => _showSingleDatePicker(
-                                Get.context!,
-                                todo,
-                                isDark,
-                              ),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  isOverdue
-                                      ? NeoBrutalismTheme.primaryWhite
-                                      : _getThemedColor(
-                                        NeoBrutalismTheme.accentBlue,
-                                        isDark,
-                                      ),
-                              border: Border.all(
-                                color: NeoBrutalismTheme.primaryBlack,
-                                width: 2,
-                              ),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.calendar_today,
-                                  size: 12,
-                                  color: NeoBrutalismTheme.primaryBlack,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${todo.dueDate!.day}/${todo.dueDate!.month}',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                    color: NeoBrutalismTheme.primaryBlack,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                      if (todo.hasReminder) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: NeoBrutalismTheme.primaryWhite,
-                            border: Border.all(
-                              color: NeoBrutalismTheme.primaryBlack,
-                              width: 2,
-                            ),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Icon(
-                            Icons.notifications_active,
-                            size: 12,
-                            color: NeoBrutalismTheme.primaryBlack,
-                          ),
-                        ),
-                      ],
-                      const Spacer(),
-                      _buildPriorityIndicator(todo.priority, isDark),
-                    ],
-                  ),
+            const SizedBox(width: 12),
+
+            // Priority bar
+            Container(width: 4, height: 40, decoration: BoxDecoration(
+                color: _priorityColor(todo.priority), borderRadius: BorderRadius.circular(2))),
+            const SizedBox(width: 10),
+
+            // Content
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(todo.title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800,
+                  color: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack,
+                  decoration: todo.isCompleted ? TextDecoration.lineThrough : null)),
+              if (todo.description != null && todo.description!.isNotEmpty)
+                Text(todo.description!, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 6),
+              Row(children: [
+                if (todo.dueDate != null) _datePill(todo, isOverdue, isDark),
+                if (todo.hasReminder) ...[
+                  const SizedBox(width: 6),
+                  const Icon(Icons.notifications_active, size: 12, color: Color(0xFFFF8533)),
                 ],
+                if (todo.tags != null && todo.tags!.isNotEmpty) ...[
+                  const SizedBox(width: 6),
+                  Text('\u{1F3F7} ${todo.tags!.length}', style: TextStyle(fontSize: 10,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600])),
+                ],
+                const Spacer(),
+                _priorityBadge(todo.priority, isDark),
+              ]),
+            ])),
+
+            // Snooze button (only for pending with due date)
+            if (!todo.isCompleted && todo.dueDate != null) ...[
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => _showSnoozeMenu(todo, isDark),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: isDark ? NeoBrutalismTheme.darkBackground : const Color(0xFFF0EEEB),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: NeoBrutalismTheme.primaryBlack, width: 1.5),
+                  ),
+                  child: const Icon(Icons.snooze, size: 16, color: NeoBrutalismTheme.primaryBlack),
+                ),
               ),
-            ),
-          ],
+            ],
+          ])),
         ),
       ),
-    ).animate().fadeIn(delay: (100 * index).ms).slideX(begin: 0.2, end: 0);
+    ).animate().fadeIn(delay: (60 * index).ms);
   }
 
-  void _showSingleDatePicker(
-    BuildContext context,
-    TodoModel todo,
-    bool isDark,
-  ) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => NeoDateRangePicker(
-            initialStartDate: todo.dueDate,
-            firstDate: DateTime.now(),
-            lastDate: DateTime(2030),
-            onDateRangeSelected: (start, end) {
-              if (start != null) {
-                controller.updateTodoDueDate(todo, start);
-              }
-            },
-          ),
-    );
-  }
-
-  Color _getTodoCardColor(TodoModel todo, bool isDark) {
-    // If completed, use bright green
-    if (todo.isCompleted) {
-      return _getThemedColor(NeoBrutalismTheme.accentGreen, isDark);
-    }
-
-    // Check if overdue
-    final isOverdue =
-        todo.dueDate != null &&
-        todo.dueDate!.isBefore(DateTime.now()) &&
-        !todo.isCompleted;
-
-    if (isOverdue) {
-      return _getThemedColor(NeoBrutalismTheme.accentPink, isDark);
-    }
-
-    // Priority-based colors - bright and readable
-    switch (todo.priority) {
-      case 3: // High priority
-        return _getThemedColor(NeoBrutalismTheme.accentOrange, isDark);
-      case 2: // Medium priority
-        return _getThemedColor(NeoBrutalismTheme.accentYellow, isDark);
-      default: // Low priority
-        return isDark
-            ? NeoBrutalismTheme.darkSurface
-            : NeoBrutalismTheme.primaryWhite;
-    }
-  }
-
-  Color _getTextColor(Color backgroundColor, bool isDark) {
-    // For accent colors (including muted versions), always use black text
-    if (backgroundColor != NeoBrutalismTheme.darkSurface &&
-        backgroundColor != NeoBrutalismTheme.primaryWhite) {
-      return NeoBrutalismTheme.primaryBlack;
-    }
-
-    // For dark surface or white background
-    return isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack;
-  }
-
-  Widget _buildPriorityIndicator(int priority, bool isDark) {
-    String label;
-    Color color;
-
-    switch (priority) {
-      case 3:
-        label = 'HIGH';
-        color = _getThemedColor(NeoBrutalismTheme.accentPink, isDark);
-        break;
-      case 2:
-        label = 'MED';
-        color = _getThemedColor(NeoBrutalismTheme.accentOrange, isDark);
-        break;
-      default:
-        label = 'LOW';
-        color = _getThemedColor(NeoBrutalismTheme.accentGreen, isDark);
-    }
-
+  Widget _datePill(TodoModel todo, bool isOverdue, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color,
-        border: Border.all(color: NeoBrutalismTheme.primaryBlack, width: 2),
-        borderRadius: BorderRadius.circular(4),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black : NeoBrutalismTheme.primaryBlack,
-            offset: const Offset(2, 2),
-          ),
-        ],
+        color: isOverdue ? const Color(0xFFE57373) : const Color(0xFFBFE3F0),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: NeoBrutalismTheme.primaryBlack, width: 1.5),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-          color: NeoBrutalismTheme.primaryBlack,
-        ),
-      ),
+      child: Text('${todo.dueDate!.day}/${todo.dueDate!.month}',
+          style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800,
+              color: isOverdue ? Colors.white : NeoBrutalismTheme.primaryBlack)),
     );
   }
+
+  Widget _priorityBadge(int p, bool isDark) {
+    final labels = {3: 'HIGH', 2: 'MED', 1: 'LOW'};
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(color: _priorityColor(p), borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: NeoBrutalismTheme.primaryBlack, width: 1.5)),
+      child: Text(labels[p] ?? 'LOW', style: const TextStyle(fontSize: 8,
+          fontWeight: FontWeight.w900, color: NeoBrutalismTheme.primaryBlack)),
+    );
+  }
+
+  Color _priorityColor(int p) {
+    switch (p) { case 3: return const Color(0xFFE57373); case 2: return const Color(0xFFFDD663); default: return const Color(0xFFB8E994); }
+  }
+
+  // ─── SNOOZE MENU ─────────────────────────────────────────
+
+  void _showSnoozeMenu(TodoModel todo, bool isDark) {
+    Get.bottomSheet(Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? NeoBrutalismTheme.darkSurface : NeoBrutalismTheme.primaryWhite,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        border: const Border(top: BorderSide(color: NeoBrutalismTheme.primaryBlack, width: 3),
+            left: BorderSide(color: NeoBrutalismTheme.primaryBlack, width: 3),
+            right: BorderSide(color: NeoBrutalismTheme.primaryBlack, width: 3)),
+      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Text('SNOOZE "${todo.title.toUpperCase()}"', style: TextStyle(fontSize: 14,
+            fontWeight: FontWeight.w900, color: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack)),
+        const SizedBox(height: 16),
+        Row(children: [
+          _snoozeOption('1 HOUR', const Duration(hours: 1), todo, Icons.schedule, isDark),
+          const SizedBox(width: 8),
+          _snoozeOption('3 HOURS', const Duration(hours: 3), todo, Icons.access_time, isDark),
+        ]),
+        const SizedBox(height: 8),
+        Row(children: [
+          _snoozeOption('TOMORROW', const Duration(days: 1), todo, Icons.calendar_today, isDark),
+          const SizedBox(width: 8),
+          _snoozeOption('NEXT WEEK', const Duration(days: 7), todo, Icons.date_range, isDark),
+        ]),
+        const SizedBox(height: 8),
+      ]),
+    ));
+  }
+
+  Widget _snoozeOption(String label, Duration dur, TodoModel todo, IconData icon, bool isDark) {
+    return Expanded(child: GestureDetector(
+      onTap: () {
+        controller.snoozeTodo(todo, dur);
+        Get.back();
+        Get.snackbar('Snoozed', '${todo.title} snoozed: $label',
+            backgroundColor: const Color(0xFFBFE3F0),
+            colorText: NeoBrutalismTheme.primaryBlack,
+            borderWidth: 3, borderColor: NeoBrutalismTheme.primaryBlack,
+            duration: const Duration(seconds: 2));
+      },
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: NeoBrutalismTheme.neoBox(
+            color: isDark ? NeoBrutalismTheme.darkBackground : const Color(0xFFF0EEEB),
+            borderColor: NeoBrutalismTheme.primaryBlack, offset: 3),
+        child: Column(children: [
+          Icon(icon, size: 22, color: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack),
+          const SizedBox(height: 4),
+          Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900,
+              color: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack)),
+        ]),
+      ),
+    ));
+  }
+
+  // ─── EMPTY STATE ─────────────────────────────────────────
+
+  Widget _buildEmptyState(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(40),
+      child: Column(children: [
+        Container(width: 80, height: 80,
+          decoration: NeoBrutalismTheme.neoBox(
+              color: NeoBrutalismTheme.getThemedColor(NeoBrutalismTheme.accentPurple, isDark),
+              borderColor: NeoBrutalismTheme.primaryBlack, offset: 5),
+          child: const Center(child: Icon(Icons.task_alt, size: 40, color: NeoBrutalismTheme.primaryBlack)),
+        ),
+        const SizedBox(height: 20),
+        Text('NO TODOS YET', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900,
+            color: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack)),
+        const SizedBox(height: 8),
+        Text('Tap + to create your first task', style: TextStyle(fontSize: 13,
+            color: isDark ? Colors.grey[400] : Colors.grey[600])),
+      ]),
+    );
+  }
+
+  // ─── GOAL DIALOG ─────────────────────────────────────────
+
+  void _showGoalDialog(bool isDark) {
+    int goal = controller.dailyGoal.value;
+    Get.dialog(Dialog(
+      backgroundColor: Colors.transparent,
+      child: StatefulBuilder(builder: (ctx, setS) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: NeoBrutalismTheme.neoBoxRounded(
+            color: isDark ? NeoBrutalismTheme.darkSurface : NeoBrutalismTheme.primaryWhite,
+            borderColor: NeoBrutalismTheme.primaryBlack),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text('DAILY GOAL', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900,
+              color: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack)),
+          const SizedBox(height: 8),
+          Text('How many tasks per day?', style: TextStyle(fontSize: 13,
+              color: isDark ? Colors.grey[400] : Colors.grey[600])),
+          const SizedBox(height: 20),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            GestureDetector(
+              onTap: () { if (goal > 1) setS(() => goal--); },
+              child: Container(width: 40, height: 40,
+                  decoration: NeoBrutalismTheme.neoBox(borderColor: NeoBrutalismTheme.primaryBlack, offset: 3),
+                  child: const Center(child: Icon(Icons.remove, color: NeoBrutalismTheme.primaryBlack))),
+            ),
+            const SizedBox(width: 20),
+            Text('$goal', style: TextStyle(fontSize: 36, fontWeight: FontWeight.w900,
+                color: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack)),
+            const SizedBox(width: 20),
+            GestureDetector(
+              onTap: () { if (goal < 20) setS(() => goal++); },
+              child: Container(width: 40, height: 40,
+                  decoration: NeoBrutalismTheme.neoBox(borderColor: NeoBrutalismTheme.primaryBlack, offset: 3),
+                  child: const Center(child: Icon(Icons.add, color: NeoBrutalismTheme.primaryBlack))),
+            ),
+          ]),
+          const SizedBox(height: 24),
+          NeoButton(text: 'SET GOAL', onPressed: () {
+            controller.setDailyGoal(goal);
+            Get.back();
+          }, color: NeoBrutalismTheme.getThemedColor(NeoBrutalismTheme.accentGreen, isDark)),
+        ]),
+      )),
+    ));
+  }
+
+  // ─── FAB ─────────────────────────────────────────────────
+
+  Widget _buildFab(bool isDark) {
+    return FloatingActionButton.extended(
+      onPressed: () => Get.toNamed('/add-todo'),
+      backgroundColor: NeoBrutalismTheme.getThemedColor(NeoBrutalismTheme.accentPurple, isDark),
+      label: const Text('NEW TASK', style: TextStyle(fontWeight: FontWeight.w900,
+          color: NeoBrutalismTheme.primaryBlack)),
+      icon: const Icon(Icons.add, color: NeoBrutalismTheme.primaryBlack),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: NeoBrutalismTheme.primaryBlack, width: 3)),
+    );
+  }
+}
+
+// ─── PROGRESS RING PAINTER ─────────────────────────────────
+
+class _ProgressRingPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  _ProgressRingPainter(this.progress, this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 6;
+
+    // Background ring
+    canvas.drawCircle(center, radius, Paint()
+      ..style = PaintingStyle.stroke ..strokeWidth = 8 ..color = Colors.grey.withOpacity(0.2));
+
+    // Progress arc
+    canvas.drawArc(Rect.fromCircle(center: center, radius: radius),
+        -math.pi / 2, 2 * math.pi * progress.clamp(0, 1), false,
+        Paint()..style = PaintingStyle.stroke ..strokeWidth = 8
+          ..strokeCap = StrokeCap.round ..color = color);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter old) => true;
 }

@@ -25,13 +25,15 @@ class IncomeModelAdapter extends TypeAdapter<IncomeModel> {
       description: fields[5] as String?,
       isRecurring: fields[6] as bool,
       recurringType: fields[7] as String?,
+      accountId: fields[8] as String?,
+      parentRecurringId: fields[9] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, IncomeModel obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -47,7 +49,11 @@ class IncomeModelAdapter extends TypeAdapter<IncomeModel> {
       ..writeByte(6)
       ..write(obj.isRecurring)
       ..writeByte(7)
-      ..write(obj.recurringType);
+      ..write(obj.recurringType)
+      ..writeByte(8)
+      ..write(obj.accountId)
+      ..writeByte(9)
+      ..write(obj.parentRecurringId);
   }
 
   @override
