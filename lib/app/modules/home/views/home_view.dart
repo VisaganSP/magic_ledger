@@ -14,6 +14,7 @@ import '../../account/controllers/account_controller.dart';
 import '../../analytics/views/analytics_view.dart';
 import '../../category/controllers/category_controller.dart';
 import '../../expense/views/expense_view.dart';
+import '../../notifications/controllers/notification_inbox_controller.dart';
 import '../../todo/views/todo_view.dart';
 import '../controllers/home_controller.dart';
 
@@ -184,6 +185,62 @@ class HomeView extends GetView<HomeController> {
                 onTap: () => _showAddMenu(isDark),
                 isDark: isDark,
               ),
+              const SizedBox(width: 10),
+              // ═══ NOTIFICATION BELL WITH BADGE ═══
+              Obx(() {
+                final inboxController = Get.find<NotificationInboxController>();
+                final count = inboxController.unreadCount.value;
+                return GestureDetector(
+                  onTap: () => Get.toNamed('/notifications'),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: NeoBrutalismTheme.neoBox(
+                          color: count > 0
+                              ? _themedColor(NeoBrutalismTheme.accentYellow, isDark)
+                              : (isDark
+                              ? NeoBrutalismTheme.darkSurface
+                              : NeoBrutalismTheme.primaryWhite),
+                          offset: 3,
+                          borderColor: NeoBrutalismTheme.primaryBlack,
+                        ),
+                        child: const Icon(Icons.notifications_outlined,
+                            size: 22, color: NeoBrutalismTheme.primaryBlack),
+                      ),
+                      if (count > 0)
+                        Positioned(
+                          right: -4,
+                          top: -4,
+                          child: Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: NeoBrutalismTheme.primaryBlack,
+                                width: 2,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                count > 9 ? '9+' : '$count',
+                                style: const TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              }),
               const SizedBox(width: 10),
               _buildHeaderButton(
                 icon: Icons.settings_outlined,

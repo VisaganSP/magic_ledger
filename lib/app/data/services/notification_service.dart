@@ -45,18 +45,99 @@ class NotificationService {
     }
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // NOTIFICATION TAP ROUTER — handles ALL notification types
+  // ═══════════════════════════════════════════════════════════
+
   void _onNotificationTap(NotificationResponse response) {
     final payload = response.payload;
-    if (payload != null && payload.isNotEmpty) {
-      // Check if this is an SMS transaction notification
-      if (payload.contains('"type"') &&
-          (payload.contains('"credit"') || payload.contains('"debit"'))) {
-        SmsTransactionService.handleNotificationTap(payload);
-        return;
-      }
+    debugPrint('[Notification] Tapped with payload: $payload');
+
+    if (payload == null || payload.isEmpty) {
+      // No payload — just open the app home
+      _navigateToHome();
+      return;
     }
-    // Handle other notification taps here if needed
+
+    // ── 1. SMS transaction (JSON with "type":"credit"/"debit") ──
+    if (payload.contains('"type"') &&
+        (payload.contains('"credit"') || payload.contains('"debit"'))) {
+      SmsTransactionService.handleNotificationTap(payload);
+      return;
+    }
+
+    // ── 2. Todo reminder (payload = "todo:{id}") ──
+    if (payload.startsWith('todo:')) {
+      final todoId = payload.substring(5);
+      _navigateToTodoDetail(todoId);
+      return;
+    }
+
+    // ── 3. Budget alert (payload = "budget:{categoryName}") ──
+    if (payload.startsWith('budget:')) {
+      _navigateToBudgets();
+      return;
+    }
+
+    // ── 4. SMS scan summary (payload = "sms_scan_summary") ──
+    if (payload == 'sms_scan_summary') {
+      _navigateToHome();
+      return;
+    }
+
+    // ── 5. Recurring engine summary (payload = "recurring_summary") ──
+    if (payload == 'recurring_summary') {
+      _navigateToHome();
+      return;
+    }
+
+    // ── Fallback — unknown payload, go home ──
+    debugPrint('[Notification] Unknown payload: $payload');
+    _navigateToHome();
   }
+
+  // ── Navigation helpers (use Future.microtask to avoid mid-build nav) ──
+
+  void _navigateToHome() {
+    Future.microtask(() {
+      if (Get.currentRoute != '/home') {
+        Get.offAllNamed('/home');
+      }
+    });
+  }
+
+  void _navigateToTodoDetail(String todoId) {
+    Future.microtask(() {
+      try {
+        final todoController = Get.find<dynamic>();
+        final todos = todoController.todos as List;
+        final todo = todos.firstWhere(
+              (t) => t.id == todoId,
+          orElse: () => null,
+        );
+
+        if (todo != null) {
+          Get.toNamed('/todo-detail', arguments: todo);
+        } else {
+          debugPrint('[Notification] Todo $todoId not found');
+          _navigateToHome();
+        }
+      } catch (e) {
+        debugPrint('[Notification] Error navigating to todo: $e');
+        _navigateToHome();
+      }
+    });
+  }
+
+  void _navigateToBudgets() {
+    Future.microtask(() {
+      Get.toNamed('/budgets');
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // SHOW NOTIFICATION
+  // ═══════════════════════════════════════════════════════════
 
   Future<void> showNotification({
     required int id,
@@ -103,6 +184,10 @@ class NotificationService {
 
     await _notifications.show(id, title, body, details, payload: payload);
   }
+
+  // ═══════════════════════════════════════════════════════════
+  // SCHEDULE NOTIFICATION
+  // ═══════════════════════════════════════════════════════════
 
   Future<bool> _checkAndRequestExactAlarmPermission() async {
     if (Platform.isAndroid) {

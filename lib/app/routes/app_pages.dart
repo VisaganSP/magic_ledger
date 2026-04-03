@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import '../bindings/budget_binding.dart';
 import '../bindings/expense_binding.dart';
+import '../bindings/notification_inbox_binding.dart';
 import '../bindings/todo_binding.dart';
 import '../modules/analytics/views/financial_calendar_view.dart';
 import '../modules/budget/views/add_budget_view.dart';
@@ -19,6 +20,7 @@ import '../modules/home/views/home_view.dart';
 import '../modules/income/bindings/income_binding.dart';
 import '../modules/income/views/add_income_view.dart';
 import '../modules/income/views/income_detail_view.dart';
+import '../modules/notifications/views/notification_inbox_view.dart';
 import '../modules/savings/controllers/savings_controller.dart';
 import '../modules/savings/views/add_savings_goal_view.dart';
 import '../modules/savings/views/savings_view.dart';
@@ -157,6 +159,11 @@ class AppPages {
     GetPage(
       name: '/financial-calendar',
       page: () => const FinancialCalendarView(),
+    ),
+    GetPage(
+      name: '/notifications',
+      page: () => const NotificationInboxView(),
+      binding: NotificationInboxBinding(),
     ),
   ];
 }

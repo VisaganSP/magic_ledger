@@ -11,6 +11,7 @@ import '../modules/expense/controllers/expense_controller.dart';
 import '../modules/expense/controllers/autocomplete_controller.dart';
 import '../modules/home/controllers/home_controller.dart';
 import '../modules/income/controllers/income_controller.dart';
+import '../modules/notifications/controllers/notification_inbox_controller.dart';
 import '../modules/savings/controllers/savings_controller.dart';
 import '../modules/settings/controllers/settings_controller.dart';
 import '../modules/todo/controllers/todo_controller.dart';
@@ -36,5 +37,6 @@ class InitialBinding extends Bindings {
     Get.put<RecurringService>(RecurringService(), permanent: true);
     Get.lazyPut<SavingsController>(() => SavingsController(), fenix: true);
     Get.lazyPut<DebtController>(() => DebtController(), fenix: true);
+    Get.put<NotificationInboxController>(NotificationInboxController(), permanent: true);
   }
 }

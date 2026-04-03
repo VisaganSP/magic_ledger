@@ -21,4 +21,5 @@ abstract class Routes {
   static const EDIT_BUDGET = '/edit-budget';
   static const accounts = '/accounts';
   static const addAccount = '/add-account';
+  static const notifications = '/notifications';
 }
