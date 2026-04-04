@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 
 import '../../../data/models/income_model.dart';
+import '../../../data/services/home_widget_service.dart';
 import '../../../data/services/notification_service.dart';
 
 class IncomeController extends GetxController {
@@ -49,6 +50,7 @@ class IncomeController extends GetxController {
         title: 'Income Added',
         body: '${income.title}: ₹${income.amount.toStringAsFixed(2)}',
       );
+      HomeWidgetService.updateWidget();
     } catch (e) {
       print('Error adding income: $e');
       Get.snackbar(
@@ -70,6 +72,7 @@ class IncomeController extends GetxController {
         title: 'Income Updated',
         body: '${income.title} has been updated',
       );
+      HomeWidgetService.updateWidget();
     } catch (e) {
       print('Error updating income: $e');
       Get.snackbar(
@@ -84,6 +87,7 @@ class IncomeController extends GetxController {
     try {
       await _incomeBox.delete(id);
       loadIncomes();
+      HomeWidgetService.updateWidget();
     } catch (e) {
       print('Error deleting income: $e');
       Get.snackbar(

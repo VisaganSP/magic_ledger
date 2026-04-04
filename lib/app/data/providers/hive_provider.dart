@@ -8,6 +8,8 @@ import '../models/expense_model.dart';
 import '../models/income_model.dart';
 import '../models/receipt_model.dart';
 import '../models/savings_goal_model.dart';
+import '../models/split_model.dart';
+import '../models/subscription_model.dart';
 import '../models/todo_model.dart';
 import '../models/transfer_model.dart'; // NEW
 
@@ -58,6 +60,12 @@ class HiveProvider {
     if (!Hive.isAdapterRegistered(9)) {
       Hive.registerAdapter(DebtModelAdapter());
     }
+    if (!Hive.isAdapterRegistered(10)) {
+      Hive.registerAdapter(SplitModelAdapter());
+    }
+    if (!Hive.isAdapterRegistered(11)) {
+      Hive.registerAdapter(SubscriptionModelAdapter());
+    }
 
     // Open Boxes
     await openBoxes();
@@ -77,6 +85,8 @@ class HiveProvider {
     await Hive.openBox<SavingsGoalModel>('savings_goals');
     await Hive.openBox<DebtModel>('debts');
     await Hive.openBox('recurring_tracking');
+    await Hive.openBox<SplitModel>('splits');
+    await Hive.openBox<SubscriptionModel>('subscriptions');
   }
 
   static Future<void> closeBoxes() async {

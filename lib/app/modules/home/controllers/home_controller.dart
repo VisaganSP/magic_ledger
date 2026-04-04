@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 
+import '../../../data/services/home_widget_service.dart';
 import '../../../data/services/period_service.dart';
 import '../../../data/services/recurring_service.dart';
 import '../../../data/services/sms_transaction_service.dart';
@@ -71,6 +72,7 @@ class HomeController extends GetxController {
   void onReady() {
     super.onReady();
     refreshStats();
+    HomeWidgetService.updateWidget();
 
     // Process recurring transactions
     try {

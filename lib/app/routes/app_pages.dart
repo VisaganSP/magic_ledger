@@ -20,12 +20,20 @@ import '../modules/home/views/home_view.dart';
 import '../modules/income/bindings/income_binding.dart';
 import '../modules/income/views/add_income_view.dart';
 import '../modules/income/views/income_detail_view.dart';
+import '../modules/insights/views/insights_view.dart';
 import '../modules/notifications/views/notification_inbox_view.dart';
 import '../modules/savings/controllers/savings_controller.dart';
 import '../modules/savings/views/add_savings_goal_view.dart';
 import '../modules/savings/views/savings_view.dart';
+import '../modules/search/views/smart_search_view.dart';
 import '../modules/settings/views/settings_view.dart';
 import '../modules/splash/views/splash_view.dart';
+import '../modules/split/controllers/split_controller.dart';
+import '../modules/split/views/add_split_view.dart';
+import '../modules/split/views/split_view.dart';
+import '../modules/subscription/controllers/subscription_controller.dart';
+import '../modules/subscription/views/add_subscription_view.dart';
+import '../modules/subscription/views/subscription_view.dart';
 import '../modules/todo/views/add_todo_view.dart';
 import '../modules/todo/views/todo_detail_view.dart';
 import '../bindings/account_binding.dart';
@@ -164,6 +172,36 @@ class AppPages {
       name: '/notifications',
       page: () => const NotificationInboxView(),
       binding: NotificationInboxBinding(),
+    ),
+    GetPage(
+      name: '/insights',
+      page: () => const InsightsView(),
+    ),
+    GetPage(
+      name: '/splits',
+      page: () => const SplitView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<SplitController>(() => SplitController());
+      }),
+    ),
+    GetPage(
+      name: '/add-split',
+      page: () => const AddSplitView(),
+    ),
+    GetPage(
+      name: '/search',
+      page: () => const SmartSearchView(),
+    ),
+    GetPage(
+      name: '/subscriptions',
+      page: () => const SubscriptionView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<SubscriptionController>(() => SubscriptionController());
+      }),
+    ),
+    GetPage(
+      name: '/add-subscription',
+      page: () => const AddSubscriptionView(),
     ),
   ];
 }
