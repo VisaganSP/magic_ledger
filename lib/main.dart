@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import 'app/bindings/initial_binding.dart';
 import 'app/data/providers/hive_provider.dart';
+import 'app/data/services/home_widget_service.dart';
 import 'app/data/services/notification_service.dart';
 import 'app/data/services/sms_transaction_service.dart';
 import 'app/routes/app_pages.dart';
@@ -16,6 +17,8 @@ void main() async {
 
   // Initialize Notifications
   await NotificationService().init();
+
+  await HomeWidgetService.init();
 
   runApp(const MyApp());
 }

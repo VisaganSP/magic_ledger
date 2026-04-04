@@ -14,6 +14,8 @@ import '../modules/income/controllers/income_controller.dart';
 import '../modules/notifications/controllers/notification_inbox_controller.dart';
 import '../modules/savings/controllers/savings_controller.dart';
 import '../modules/settings/controllers/settings_controller.dart';
+import '../modules/split/controllers/split_controller.dart';
+import '../modules/subscription/controllers/subscription_controller.dart';
 import '../modules/todo/controllers/todo_controller.dart';
 
 class InitialBinding extends Bindings {
@@ -38,5 +40,7 @@ class InitialBinding extends Bindings {
     Get.lazyPut<SavingsController>(() => SavingsController(), fenix: true);
     Get.lazyPut<DebtController>(() => DebtController(), fenix: true);
     Get.put<NotificationInboxController>(NotificationInboxController(), permanent: true);
+    Get.lazyPut<SplitController>(() => SplitController());
+    Get.lazyPut<SubscriptionController>(() => SubscriptionController());
   }
 }

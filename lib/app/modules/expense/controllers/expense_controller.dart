@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 
 import '../../../data/models/expense_model.dart';
+import '../../../data/services/home_widget_service.dart';
 import '../../../data/services/notification_service.dart';
 
 class ExpenseController extends GetxController {
@@ -49,6 +50,7 @@ class ExpenseController extends GetxController {
         title: 'Expense Added',
         body: '${expense.title}: ₹${expense.amount.toStringAsFixed(2)}',
       );
+      HomeWidgetService.updateWidget();
     } catch (e) {
       print('Error adding expense: $e');
       Get.snackbar(
@@ -70,6 +72,7 @@ class ExpenseController extends GetxController {
         title: 'Expense Updated',
         body: '${expense.title} has been updated',
       );
+      HomeWidgetService.updateWidget();
     } catch (e) {
       print('Error updating expense: $e');
       Get.snackbar(
@@ -84,6 +87,7 @@ class ExpenseController extends GetxController {
     try {
       await _expenseBox.delete(id);
       loadExpenses();
+      HomeWidgetService.updateWidget();
     } catch (e) {
       print('Error deleting expense: $e');
       Get.snackbar(
@@ -583,4 +587,6 @@ class ExpenseController extends GetxController {
       'count': recurringExpenses.length,
     };
   }
+
+
 }

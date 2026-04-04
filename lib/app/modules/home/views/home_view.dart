@@ -1210,6 +1210,51 @@ class HomeView extends GetView<HomeController> {
             ),
           ],
         ),
+        // ═══ NEW: Third row for batch 2 features ═══
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionButton(
+                label: 'INSIGHTS',
+                icon: Icons.insights,
+                color: _themedColor(NeoBrutalismTheme.accentPurple, isDark),
+                onTap: () => Get.toNamed('/insights'),
+                isDark: isDark,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildQuickActionButton(
+                label: 'SPLIT',
+                icon: Icons.call_split,
+                color: _themedColor(NeoBrutalismTheme.accentLilac, isDark),
+                onTap: () => Get.toNamed('/splits'),
+                isDark: isDark,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildQuickActionButton(
+                label: 'SEARCH',
+                icon: Icons.search,
+                color: _themedColor(NeoBrutalismTheme.accentBeige, isDark),
+                onTap: () => Get.toNamed('/search'),
+                isDark: isDark,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildQuickActionButton(
+                label: 'SUBS',
+                icon: Icons.autorenew,
+                color: _themedColor(NeoBrutalismTheme.accentPink, isDark),
+                onTap: () => Get.toNamed('/subscriptions'),
+                isDark: isDark,
+              ),
+            ),
+          ],
+        ),
       ],
     ).animate().fadeIn(delay: 400.ms);
   }
