@@ -84,7 +84,7 @@ class SplitView extends GetView<SplitController> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Get.back(),
+            onTap: () => Navigator.of(Get.context!).pop(),
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: NeoBrutalismTheme.neoBox(
@@ -465,7 +465,7 @@ class SplitView extends GetView<SplitController> {
                       child: NeoButton(
                         text: 'DELETE',
                         onPressed: () {
-                          Get.back();
+                          Navigator.of(Get.context!).pop();
                           controller.deleteSplit(splitId);
                         },
                         color: Colors.red.shade100,
@@ -491,7 +491,7 @@ class SplitView extends GetView<SplitController> {
                                 '${s.participants[i]}: ₹${s.shares[i].toStringAsFixed(2)} $status');
                           }
                           lines.add('\nSent from Magic Ledger');
-                          Get.back();
+                          Navigator.of(Get.context!).pop();
                           Get.snackbar('Copied!',
                               'Split details copied to clipboard',
                               snackPosition: SnackPosition.BOTTOM);

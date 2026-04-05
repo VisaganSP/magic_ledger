@@ -284,7 +284,7 @@ class _AddExpenseViewState extends State<AddExpenseView>
 
       if (_isEditMode) {
         expenseController.updateExpense(expense);
-        Get.back();
+        Navigator.of(Get.context!).pop();
         Get.snackbar('Success', 'Expense updated!',
             backgroundColor: NeoBrutalismTheme.accentBlue,
             colorText: NeoBrutalismTheme.primaryBlack,
@@ -292,7 +292,7 @@ class _AddExpenseViewState extends State<AddExpenseView>
             duration: const Duration(seconds: 2));
       } else {
         expenseController.addExpense(expense);
-        Get.back();
+        Navigator.of(Get.context!).pop();
         Get.snackbar('Success',
             _isPrefilled ? 'SMS expense saved!' : 'Expense added!',
             backgroundColor: NeoBrutalismTheme.accentGreen,

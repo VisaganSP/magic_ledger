@@ -85,14 +85,14 @@ class _AddBudgetViewState extends State<AddBudgetView> {
 
     if (_isEditMode) {
       budgetController.updateBudget(budget);
-      Get.back();
+      Navigator.of(Get.context!).pop();
       Get.snackbar('Updated', 'Budget updated successfully',
           backgroundColor: NeoBrutalismTheme.accentBlue,
           colorText: NeoBrutalismTheme.primaryBlack,
           borderWidth: 3, borderColor: NeoBrutalismTheme.primaryBlack);
     } else {
       budgetController.addBudget(budget);
-      Get.back();
+      Navigator.of(Get.context!).pop();
       Get.snackbar('Created', 'Budget added successfully',
           backgroundColor: NeoBrutalismTheme.accentGreen,
           colorText: NeoBrutalismTheme.primaryBlack,

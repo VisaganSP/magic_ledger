@@ -360,7 +360,7 @@ class LoginView extends GetView<AuthController> {
                   Expanded(
                     child: NeoButton(
                       text: 'CANCEL',
-                      onPressed: () => Get.back(),
+                      onPressed: () => Navigator.of(Get.context!).pop(),
                       color: isDark
                           ? NeoBrutalismTheme.darkBackground
                           : NeoBrutalismTheme.lightBackground,

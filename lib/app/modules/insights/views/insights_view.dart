@@ -113,7 +113,7 @@ class _InsightsViewState extends State<InsightsView> {
           Row(
             children: [
               GestureDetector(
-                onTap: () => Get.back(),
+                onTap: () => Navigator.of(Get.context!).pop(),
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: NeoBrutalismTheme.neoBox(

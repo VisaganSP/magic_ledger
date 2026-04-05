@@ -1,9 +1,11 @@
 import 'package:get/get.dart';
 
+import '../data/services/auth_service.dart';
 import '../data/services/period_service.dart';
 import '../data/services/recurring_service.dart';
 import '../data/services/sms_transaction_service.dart';
 import '../modules/account/controllers/account_controller.dart';
+import '../modules/achievements/views/achievements_view.dart';
 import '../modules/analytics/controllers/analytics_controller.dart';
 import '../modules/category/controllers/category_controller.dart';
 import '../modules/debt/controllers/debt_controller.dart';
@@ -11,11 +13,13 @@ import '../modules/expense/controllers/expense_controller.dart';
 import '../modules/expense/controllers/autocomplete_controller.dart';
 import '../modules/home/controllers/home_controller.dart';
 import '../modules/income/controllers/income_controller.dart';
+import '../modules/mood/views/mood_journal_view.dart';
 import '../modules/notifications/controllers/notification_inbox_controller.dart';
 import '../modules/savings/controllers/savings_controller.dart';
 import '../modules/settings/controllers/settings_controller.dart';
 import '../modules/split/controllers/split_controller.dart';
 import '../modules/subscription/controllers/subscription_controller.dart';
+import '../modules/templates/views/expense_templates_view.dart';
 import '../modules/todo/controllers/todo_controller.dart';
 
 class InitialBinding extends Bindings {
@@ -42,5 +46,9 @@ class InitialBinding extends Bindings {
     Get.put<NotificationInboxController>(NotificationInboxController(), permanent: true);
     Get.lazyPut<SplitController>(() => SplitController());
     Get.lazyPut<SubscriptionController>(() => SubscriptionController());
+    Get.put<MoodService>(MoodService(), permanent: true);
+    Get.put<AuthService>(AuthService(), permanent: true);
+    Get.put<AchievementsController>(AchievementsController(), permanent: true);
+    Get.put<ExpenseTemplateController>(ExpenseTemplateController(), permanent: true);
   }
 }

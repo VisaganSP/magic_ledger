@@ -4,6 +4,7 @@ import 'package:hive/hive.dart';
 import '../../../data/models/expense_model.dart';
 import '../../../data/services/home_widget_service.dart';
 import '../../../data/services/notification_service.dart';
+import '../../achievements/views/achievements_view.dart';
 
 class ExpenseController extends GetxController {
   final Box<ExpenseModel> _expenseBox = Hive.box('expenses');
@@ -51,6 +52,7 @@ class ExpenseController extends GetxController {
         body: '${expense.title}: ₹${expense.amount.toStringAsFixed(2)}',
       );
       HomeWidgetService.updateWidget();
+      try { Get.find<AchievementsController>().checkAll(); } catch (_) {}
     } catch (e) {
       print('Error adding expense: $e');
       Get.snackbar(

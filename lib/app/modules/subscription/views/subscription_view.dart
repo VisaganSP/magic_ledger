@@ -93,7 +93,7 @@ class SubscriptionView extends GetView<SubscriptionController> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Get.back(),
+            onTap: () => Navigator.of(Get.context!).pop(),
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: NeoBrutalismTheme.neoBox(
@@ -393,7 +393,7 @@ class SubscriptionView extends GetView<SubscriptionController> {
                   child: NeoButton(
                     text: sub.isActive ? 'PAUSE' : 'RESUME',
                     onPressed: () {
-                      Get.back();
+                      Navigator.of(Get.context!).pop();
                       controller.toggleActive(sub.id);
                     },
                     color: sub.isActive
@@ -407,7 +407,7 @@ class SubscriptionView extends GetView<SubscriptionController> {
                   child: NeoButton(
                     text: 'EDIT',
                     onPressed: () {
-                      Get.back();
+                      Navigator.of(Get.context!).pop();
                       Get.toNamed('/add-subscription', arguments: sub);
                     },
                     color: _t(NeoBrutalismTheme.accentSkyBlue, isDark),
@@ -417,7 +417,7 @@ class SubscriptionView extends GetView<SubscriptionController> {
                 const SizedBox(width: 8),
                 GestureDetector(
                   onTap: () {
-                    Get.back();
+                    Navigator.of(Get.context!).pop();
                     controller.deleteSubscription(sub.id);
                   },
                   child: Container(

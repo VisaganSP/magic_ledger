@@ -256,11 +256,11 @@ class DebtView extends GetView<DebtController> {
                   border: OutlineInputBorder(borderSide: BorderSide(color: NeoBrutalismTheme.primaryBlack, width: 3)))),
           const SizedBox(height: 20),
           Row(children: [
-            Expanded(child: NeoButton(text: 'CANCEL', onPressed: () => Get.back(), color: NeoBrutalismTheme.primaryWhite)),
+            Expanded(child: NeoButton(text: 'CANCEL', onPressed: () => Navigator.of(Get.context!).pop(), color: NeoBrutalismTheme.primaryWhite)),
             const SizedBox(width: 12),
             Expanded(child: NeoButton(text: 'PAY', onPressed: () {
               final amt = double.tryParse(tc.text) ?? 0;
-              if (amt > 0) { controller.makePayment(debt.id, amt); Get.back();
+              if (amt > 0) { controller.makePayment(debt.id, amt); Navigator.of(Get.context!).pop();
               Get.snackbar('Paid!', '${_cur(amt)} recorded for ${debt.name}',
                   backgroundColor: const Color(0xFFB8E994), colorText: NeoBrutalismTheme.primaryBlack); }
             }, color: NeoBrutalismTheme.getThemedColor(NeoBrutalismTheme.accentGreen, isDark))),
@@ -339,7 +339,7 @@ class DebtView extends GetView<DebtController> {
                   ]),
                 ])),
             const SizedBox(height: 16),
-            NeoButton(text: 'CLOSE', onPressed: () => Get.back(), color: NeoBrutalismTheme.primaryWhite),
+            NeoButton(text: 'CLOSE', onPressed: () => Navigator.of(Get.context!).pop(), color: NeoBrutalismTheme.primaryWhite),
           ])));
     }));
   }

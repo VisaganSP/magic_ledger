@@ -205,14 +205,14 @@ class _AddCategoryViewState extends State<AddCategoryView> {
 
     if (_isEditMode) {
       categoryController.updateCategory(category);
-      Get.back();
+      Navigator.of(Get.context!).pop();
       Get.snackbar('Updated', 'Category updated!',
           backgroundColor: NeoBrutalismTheme.accentBlue,
           colorText: NeoBrutalismTheme.primaryBlack,
           borderWidth: 3, borderColor: NeoBrutalismTheme.primaryBlack);
     } else {
       categoryController.addCategory(category);
-      Get.back();
+      Navigator.of(Get.context!).pop();
       Get.snackbar('Created', 'Category added!',
           backgroundColor: NeoBrutalismTheme.accentGreen,
           colorText: NeoBrutalismTheme.primaryBlack,

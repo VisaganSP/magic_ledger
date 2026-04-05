@@ -87,6 +87,8 @@ class HiveProvider {
     await Hive.openBox('recurring_tracking');
     await Hive.openBox<SplitModel>('splits');
     await Hive.openBox<SubscriptionModel>('subscriptions');
+    await Hive.openBox('expense_templates');
+    await Hive.openBox('achievements');
   }
 
   static Future<void> closeBoxes() async {

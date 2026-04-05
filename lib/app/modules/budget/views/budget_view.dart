@@ -549,12 +549,12 @@ class BudgetView extends GetView<BudgetController> {
           const Text('This cannot be undone.', style: TextStyle(fontSize: 14)),
           const SizedBox(height: 20),
           Row(children: [
-            Expanded(child: NeoButton(text: 'CANCEL', onPressed: () => Get.back(),
+            Expanded(child: NeoButton(text: 'CANCEL', onPressed: () => Navigator.of(Get.context!).pop(),
                 color: NeoBrutalismTheme.primaryWhite)),
             const SizedBox(width: 12),
             Expanded(child: NeoButton(text: 'DELETE', onPressed: () {
               controller.deleteBudget(budget.id);
-              Get.back();
+              Navigator.of(Get.context!).pop();
               Get.snackbar('Deleted', 'Budget removed',
                   backgroundColor: NeoBrutalismTheme.accentGreen,
                   colorText: NeoBrutalismTheme.primaryBlack);

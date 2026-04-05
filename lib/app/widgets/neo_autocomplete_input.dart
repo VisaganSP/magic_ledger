@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/neo_brutalism_theme.dart';
 
-class NeoAutocompleteInput extends StatelessWidget {
+class NeoAutocompleteInput extends StatefulWidget {
   final TextEditingController controller;
   final String label;
   final String hint;
@@ -26,12 +26,21 @@ class NeoAutocompleteInput extends StatelessWidget {
   });
 
   @override
+  State<NeoAutocompleteInput> createState() => _NeoAutocompleteInputState();
+}
+
+class _NeoAutocompleteInputState extends State<NeoAutocompleteInput> {
+  bool _listenerAttached = false;
+
+  @override
   Widget build(BuildContext context) {
+    final isDark = widget.isDark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          widget.label,
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w900,
@@ -40,46 +49,44 @@ class NeoAutocompleteInput extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Autocomplete<String>(
+          initialValue: widget.controller.value,
           optionsBuilder: (TextEditingValue textEditingValue) {
-            // Only show suggestions when user is actively typing
-            // Return empty if field is empty or user just clicked
             if (textEditingValue.text.isEmpty) {
               return const Iterable<String>.empty();
             }
-
-            // Filter suggestions based on input
-            return suggestions.where((String option) {
+            return widget.suggestions.where((String option) {
               return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
             }).take(5);
           },
-          onSelected: onSuggestionSelected,
+          onSelected: widget.onSuggestionSelected,
           fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
-            // Sync with the main controller
-            textEditingController.text = controller.text;
-            textEditingController.selection = controller.selection;
-
-            textEditingController.addListener(() {
-              controller.text = textEditingController.text;
-              controller.selection = textEditingController.selection;
-            });
+            // Attach listener ONCE to sync back to main controller
+            if (!_listenerAttached) {
+              _listenerAttached = true;
+              textEditingController.addListener(() {
+                if (widget.controller.text != textEditingController.text) {
+                  widget.controller.text = textEditingController.text;
+                }
+              });
+            }
 
             return TextFormField(
               controller: textEditingController,
               focusNode: focusNode,
-              maxLines: maxLines,
+              maxLines: widget.maxLines,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack,
               ),
               decoration: InputDecoration(
-                hintText: hint,
+                hintText: widget.hint,
                 hintStyle: TextStyle(
                   color: isDark ? Colors.grey[400] : Colors.grey,
                   fontWeight: FontWeight.w500,
                 ),
-                suffixIcon: suffixIcon != null
-                    ? Icon(suffixIcon, color: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack)
+                suffixIcon: widget.suffixIcon != null
+                    ? Icon(widget.suffixIcon, color: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack)
                     : null,
                 filled: true,
                 fillColor: isDark ? NeoBrutalismTheme.darkSurface : NeoBrutalismTheme.primaryWhite,
@@ -101,7 +108,7 @@ class NeoAutocompleteInput extends StatelessWidget {
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               ),
-              validator: validator,
+              validator: widget.validator,
             );
           },
           optionsViewBuilder: (context, onSelected, options) {

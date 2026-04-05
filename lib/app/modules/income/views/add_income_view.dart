@@ -195,7 +195,7 @@ class _AddIncomeViewState extends State<AddIncomeView> {
 
       if (_isEditMode) {
         incomeController.updateIncome(income);
-        Get.back();
+        Navigator.of(Get.context!).pop();
         Get.snackbar('Success', 'Income updated!',
             backgroundColor: NeoBrutalismTheme.accentBlue,
             colorText: NeoBrutalismTheme.primaryBlack,
@@ -203,7 +203,7 @@ class _AddIncomeViewState extends State<AddIncomeView> {
             duration: const Duration(seconds: 2));
       } else {
         incomeController.addIncome(income);
-        Get.back();
+        Navigator.of(context).pop();
         Get.snackbar('Success',
             _isPrefilled ? 'SMS income saved!' : 'Income added!',
             backgroundColor: NeoBrutalismTheme.accentGreen,

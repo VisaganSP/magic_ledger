@@ -229,11 +229,11 @@ class SavingsView extends GetView<SavingsController> {
                   border: OutlineInputBorder(borderSide: BorderSide(color: NeoBrutalismTheme.primaryBlack, width: 3)))),
           const SizedBox(height: 20),
           Row(children: [
-            Expanded(child: NeoButton(text: 'CANCEL', onPressed: () => Get.back(), color: NeoBrutalismTheme.primaryWhite)),
+            Expanded(child: NeoButton(text: 'CANCEL', onPressed: () => Navigator.of(Get.context!).pop(), color: NeoBrutalismTheme.primaryWhite)),
             const SizedBox(width: 12),
             Expanded(child: NeoButton(text: 'ADD', onPressed: () {
               final amt = double.tryParse(tc.text) ?? 0;
-              if (amt > 0) { controller.contribute(goal.id, amt); Get.back();
+              if (amt > 0) { controller.contribute(goal.id, amt); Navigator.of(Get.context!).pop();
               Get.snackbar('\u{1F389} Saved!', '\u{20B9}${amt.toStringAsFixed(0)} added to ${goal.name}',
                   backgroundColor: const Color(0xFFB8E994), colorText: NeoBrutalismTheme.primaryBlack); }
             }, color: NeoBrutalismTheme.getThemedColor(NeoBrutalismTheme.accentGreen, isDark))),
@@ -259,11 +259,11 @@ class SavingsView extends GetView<SavingsController> {
                   border: OutlineInputBorder(borderSide: BorderSide(color: NeoBrutalismTheme.primaryBlack, width: 3)))),
           const SizedBox(height: 20),
           Row(children: [
-            Expanded(child: NeoButton(text: 'CANCEL', onPressed: () => Get.back(), color: NeoBrutalismTheme.primaryWhite)),
+            Expanded(child: NeoButton(text: 'CANCEL', onPressed: () => Navigator.of(Get.context!).pop(), color: NeoBrutalismTheme.primaryWhite)),
             const SizedBox(width: 12),
             Expanded(child: NeoButton(text: 'WITHDRAW', onPressed: () {
               final amt = double.tryParse(tc.text) ?? 0;
-              if (amt > 0 && amt <= goal.savedAmount) { controller.withdraw(goal.id, amt); Get.back(); }
+              if (amt > 0 && amt <= goal.savedAmount) { controller.withdraw(goal.id, amt); Navigator.of(Get.context!).pop(); }
             }, color: NeoBrutalismTheme.getThemedColor(NeoBrutalismTheme.accentOrange, isDark))),
           ]),
         ]))));

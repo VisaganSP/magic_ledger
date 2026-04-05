@@ -52,7 +52,7 @@ class _AddDebtViewState extends State<AddDebtView> {
       emiDay: _emiDay,
     );
     ctrl.addDebt(debt);
-    Get.back();
+    Navigator.of(Get.context!).pop();
     Get.snackbar('Added', '${debt.name} debt tracked',
         backgroundColor: NeoBrutalismTheme.accentGreen, colorText: NeoBrutalismTheme.primaryBlack,
         borderWidth: 3, borderColor: NeoBrutalismTheme.primaryBlack);

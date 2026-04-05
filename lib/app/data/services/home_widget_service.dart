@@ -54,7 +54,12 @@ class HomeWidgetService {
 
       final totalSpent = monthExpenses.fold(0.0, (s, e) => s + e.amount);
       final totalEarned = monthIncomes.fold(0.0, (s, i) => s + i.amount);
-      final balance = totalEarned - totalSpent;
+      // Real balance from accounts, not income-expenses
+      double balance = totalEarned - totalSpent; // fallback
+      try {
+        final accCtrl = Get.find<AccountController>();
+        balance = accCtrl.getTotalBalance();
+      } catch (_) {}
       final savingsRate = totalEarned > 0
           ? ((totalEarned - totalSpent) / totalEarned * 100)
           : 0.0;
