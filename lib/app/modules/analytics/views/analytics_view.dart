@@ -987,7 +987,7 @@ class AnalyticsView extends GetView<AnalyticsController> {
                 controller.selectedPeriod.value,
               );
 
-              Get.back();
+              Navigator.of(Get.context!).pop();
               Get.snackbar('Success', 'PDF report generated!',
                   backgroundColor: _t(NeoBrutalismTheme.accentGreen, isDark),
                   colorText: NeoBrutalismTheme.primaryBlack,

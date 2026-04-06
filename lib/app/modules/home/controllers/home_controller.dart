@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../data/services/home_widget_service.dart';
+import '../../../data/services/money_coach_service.dart';
 import '../../../data/services/period_service.dart';
 import '../../../data/services/recurring_service.dart';
 import '../../../data/services/sms_transaction_service.dart';
@@ -11,11 +12,12 @@ import '../../income/controllers/income_controller.dart';
 import '../../todo/controllers/todo_controller.dart';
 
 class HomeController extends GetxController {
-  late final ExpenseController expenseController;
-  late final TodoController todoController;
-  late final IncomeController incomeController;
-  late final AccountController accountController;
-  late final PeriodService periodService;
+  // ─── Direct initialization — no late, no double-assign crash ──
+  final ExpenseController expenseController = Get.find<ExpenseController>();
+  final TodoController todoController = Get.find<TodoController>();
+  final IncomeController incomeController = Get.find<IncomeController>();
+  final AccountController accountController = Get.find<AccountController>();
+  final PeriodService periodService = Get.find<PeriodService>();
 
   final RxInt selectedIndex = 0.obs;
 
@@ -39,31 +41,20 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-
-    expenseController = Get.find<ExpenseController>();
-    todoController = Get.find<TodoController>();
-    incomeController = Get.find<IncomeController>();
-    accountController = Get.find<AccountController>();
-    periodService = Get.find<PeriodService>();
-
     calculateStats();
     setupReactiveBindings();
   }
 
   void setupReactiveBindings() {
-    // React to data changes
     ever(expenseController.expenses, (_) => calculateStats());
     ever(todoController.todos, (_) => calculateStats());
     ever(incomeController.incomes, (_) => calculateStats());
 
-    // React to period changes
     ever(periodService.selectedMonth, (_) => calculateStats());
     ever(periodService.selectedYear, (_) => calculateStats());
 
-    // React to account filter changes
     ever(accountController.selectedAccountId, (_) => calculateStats());
 
-    // Also listen to todo counts
     ever(todoController.pendingCount, (_) => calculateStats());
     ever(todoController.completedCount, (_) => calculateStats());
   }
@@ -73,13 +64,13 @@ class HomeController extends GetxController {
     super.onReady();
     refreshStats();
     HomeWidgetService.updateWidget();
+    MoneyCoachService().init();
 
-    // Process recurring transactions
     try {
       final recurringService = Get.find<RecurringService>();
       recurringService.processAll().then((count) {
         if (count > 0) {
-          refreshStats(); // Refresh after generating
+          refreshStats();
           Get.snackbar(
             'Auto-generated',
             '$count recurring transaction${count == 1 ? '' : 's'} added',
@@ -91,7 +82,6 @@ class HomeController extends GetxController {
       });
     } catch (_) {}
 
-    // SMS scan (already added previously)
     try {
       final smsService = Get.find<SmsTransactionService>();
       smsService.scanRecentSms(hours: 24);
@@ -104,7 +94,6 @@ class HomeController extends GetxController {
       final end = periodService.periodEnd;
       final accountId = accountController.selectedAccountId.value;
 
-      // ── Current period expenses ──
       var periodExpenses = expenseController.expenses.where((e) =>
       e.date.isAfter(start.subtract(const Duration(days: 1))) &&
           e.date.isBefore(end.add(const Duration(days: 1))));
@@ -116,7 +105,6 @@ class HomeController extends GetxController {
       totalExpenses.value =
           periodExpenses.fold(0.0, (sum, e) => sum + e.amount);
 
-      // ── Current period income ──
       var periodIncomes = incomeController.incomes.where((i) =>
       i.date.isAfter(start.subtract(const Duration(days: 1))) &&
           i.date.isBefore(end.add(const Duration(days: 1))));
@@ -128,10 +116,8 @@ class HomeController extends GetxController {
       totalIncome.value =
           periodIncomes.fold(0.0, (sum, i) => sum + i.amount);
 
-      // ── Balance ──
       balance.value = totalIncome.value - totalExpenses.value;
 
-      // ── Savings % ──
       if (totalIncome.value > 0) {
         savingsPercentage.value =
             ((totalIncome.value - totalExpenses.value) / totalIncome.value * 100)
@@ -140,26 +126,22 @@ class HomeController extends GetxController {
         savingsPercentage.value = 0.0;
       }
 
-      // ── Transaction count ──
       totalTransactions.value =
           periodExpenses.length + periodIncomes.length;
 
-      // ── Pending todos ──
       pendingTodos.value =
           todoController.todos.where((t) => !t.isCompleted).length;
 
-      // ── Daily average ──
       final now = DateTime.now();
       int daysElapsed;
       if (periodService.isCurrentPeriod) {
         daysElapsed = now.day;
       } else {
-        daysElapsed = end.day; // full month
+        daysElapsed = end.day;
       }
       dailyAvgExpense.value =
       daysElapsed > 0 ? totalExpenses.value / daysElapsed : 0.0;
 
-      // ── Previous month comparison ──
       _calculateComparison(accountId);
 
       update();
@@ -174,7 +156,6 @@ class HomeController extends GetxController {
       final prevStart = periodService.previousPeriodStart;
       final prevEnd = periodService.previousPeriodEnd;
 
-      // Previous month expenses
       var prevExpenses = expenseController.expenses.where((e) =>
       e.date.isAfter(prevStart.subtract(const Duration(days: 1))) &&
           e.date.isBefore(prevEnd.add(const Duration(days: 1))));
@@ -186,7 +167,6 @@ class HomeController extends GetxController {
       prevMonthExpenses.value =
           prevExpenses.fold(0.0, (sum, e) => sum + e.amount);
 
-      // Previous month income
       var prevIncomes = incomeController.incomes.where((i) =>
       i.date.isAfter(prevStart.subtract(const Duration(days: 1))) &&
           i.date.isBefore(prevEnd.add(const Duration(days: 1))));
@@ -198,12 +178,10 @@ class HomeController extends GetxController {
       prevMonthIncome.value =
           prevIncomes.fold(0.0, (sum, i) => sum + i.amount);
 
-      // Change percentages
       if (prevMonthExpenses.value > 0) {
         expenseChangePercent.value =
         ((totalExpenses.value - prevMonthExpenses.value) /
-            prevMonthExpenses.value *
-            100);
+            prevMonthExpenses.value * 100);
       } else {
         expenseChangePercent.value = totalExpenses.value > 0 ? 100.0 : 0.0;
       }
@@ -211,8 +189,7 @@ class HomeController extends GetxController {
       if (prevMonthIncome.value > 0) {
         incomeChangePercent.value =
         ((totalIncome.value - prevMonthIncome.value) /
-            prevMonthIncome.value *
-            100);
+            prevMonthIncome.value * 100);
       } else {
         incomeChangePercent.value = totalIncome.value > 0 ? 100.0 : 0.0;
       }
@@ -265,9 +242,6 @@ class HomeController extends GetxController {
     refreshStats();
   }
 
-  // ─── HELPERS FOR VIEW ────────────────────────────────────
-
-  /// Get recent transactions for the selected period + account
   List<Map<String, dynamic>> getRecentTransactions({int limit = 6}) {
     final start = periodService.periodStart;
     final end = periodService.periodEnd;
@@ -305,12 +279,10 @@ class HomeController extends GetxController {
     return transactions.take(limit).toList();
   }
 
-  /// Get all transactions for the "see all" dialog
   List<Map<String, dynamic>> getAllTransactions() {
     return getRecentTransactions(limit: 99999);
   }
 
-  /// Get a spending "health" indicator
   String get spendingHealth {
     if (savingsPercentage.value >= 30) return 'EXCELLENT';
     if (savingsPercentage.value >= 15) return 'GOOD';
@@ -318,7 +290,6 @@ class HomeController extends GetxController {
     return 'OVERSPENT';
   }
 
-  /// Daily budget remaining (if user has income this month)
   double get dailyBudgetRemaining {
     if (totalIncome.value <= 0) return 0;
     final now = DateTime.now();

@@ -5,7 +5,7 @@
 /// and UPI apps (Google Pay, PhonePe, Paytm, etc.)
 class TransactionParser {
   /// Result of parsing an SMS
-  static TransactionParseResult? parse(String message) {
+  static TransactionParseResult? parse(String message, {DateTime? smsDate}) {
     if (message.isEmpty) return null;
 
     // Normalize the message
@@ -30,6 +30,7 @@ class TransactionParser {
       refNumber: _extractRefNumber(msg),
       cardType: _extractCardType(msg),
       rawMessage: message,
+      date: smsDate ?? _extractDateFromMessage(msg),
     );
   }
 
@@ -37,7 +38,6 @@ class TransactionParser {
   static bool _isBankMessage(String msg) {
     final lower = msg.toLowerCase();
 
-    // Must contain a money indicator
     final hasMoneyKeyword = RegExp(
       r'(rs\.?|inr|rupee|credited|debited|sent|received|paid|payment|txn|transaction|withdrawn|deposit|transfer)',
       caseSensitive: false,
@@ -45,7 +45,6 @@ class TransactionParser {
 
     if (!hasMoneyKeyword) return false;
 
-    // Exclude OTP / promotional / non-transactional
     final isOtp = RegExp(r'(otp|one.?time|verification|password|pin)', caseSensitive: false).hasMatch(lower);
     final isPromo = RegExp(r'(offer|cashback.*earn|apply.*now|download|install|limit.*enhance)', caseSensitive: false).hasMatch(lower);
 
@@ -58,7 +57,6 @@ class TransactionParser {
   static String? _detectType(String msg) {
     final lower = msg.toLowerCase();
 
-    // ─── CREDIT indicators ─────────────────────────────
     final creditPatterns = [
       r'credited',
       r'received',
@@ -73,7 +71,6 @@ class TransactionParser {
       r'(?:rs|inr)[\s.]*[\d,]+\.?\d*\s*(?:has\s+been\s+)?credited',
     ];
 
-    // ─── DEBIT indicators ──────────────────────────────
     final debitPatterns = [
       r'debited',
       r'sent\s+rs',
@@ -91,18 +88,13 @@ class TransactionParser {
     ];
 
     for (final pattern in creditPatterns) {
-      if (RegExp(pattern, caseSensitive: false).hasMatch(lower)) {
-        return 'credit';
-      }
+      if (RegExp(pattern, caseSensitive: false).hasMatch(lower)) return 'credit';
     }
 
     for (final pattern in debitPatterns) {
-      if (RegExp(pattern, caseSensitive: false).hasMatch(lower)) {
-        return 'debit';
-      }
+      if (RegExp(pattern, caseSensitive: false).hasMatch(lower)) return 'debit';
     }
 
-    // Fallback: "Sent Rs" = debit, "from VPA" with credit context = credit
     if (lower.contains('sent rs') || lower.contains('sent inr')) return 'debit';
 
     return null;
@@ -110,15 +102,10 @@ class TransactionParser {
 
   /// Extract the transaction amount
   static double? _extractAmount(String msg) {
-    // Patterns for amount extraction (ordered by specificity)
     final patterns = [
-      // "Rs.2,50,000.00" or "Rs 2,50,000.00" or "Rs.2.00"
       RegExp(r'(?:rs|inr)[\s.]*([0-9,]+\.?\d{0,2})', caseSensitive: false),
-      // "INR 2,500" or "INR 2500.00"
       RegExp(r'(?:inr)\s*([0-9,]+\.?\d{0,2})', caseSensitive: false),
-      // "₹2,500" or "₹ 2,500.00"
       RegExp(r'₹\s*([0-9,]+\.?\d{0,2})'),
-      // "Rupees 2500"
       RegExp(r'rupees?\s*([0-9,]+\.?\d{0,2})', caseSensitive: false),
     ];
 
@@ -136,12 +123,10 @@ class TransactionParser {
 
   /// Extract last 4 digits of account number
   static String? _extractAccountLast4(String msg) {
-    // "A/c XX7543" or "A/C *7543" or "Account ****7543" or "a/c no. XX1234"
     final patterns = [
       RegExp(r'a/?c\s*(?:no\.?\s*)?(?:XX|xx|\*{1,4})(\d{4})', caseSensitive: false),
       RegExp(r'account\s*(?:no\.?\s*)?(?:XX|xx|\*{1,4})(\d{4})', caseSensitive: false),
       RegExp(r'(?:card|acct)\s*(?:ending\s*)?(?:XX|xx|\*{1,4})(\d{4})', caseSensitive: false),
-      // "Bank 7543" or just masked digits
       RegExp(r'(?:XX|xx|\*{2,})(\d{4})'),
     ];
 
@@ -196,11 +181,8 @@ class TransactionParser {
   /// Extract merchant/payee name
   static String? _extractMerchant(String msg) {
     final patterns = [
-      // "to S JAYA" or "to SWIGGY" or "To VPA merchant@bank"
       RegExp(r'(?:to|at|towards|for)\s+([A-Z][A-Za-z\s]{2,25}?)(?:\s+\d|\s+on|\s+ref|\s*$)', caseSensitive: false),
-      // "paid to MERCHANT"
       RegExp(r'paid\s+(?:to\s+)?([A-Z][A-Za-z\s]{2,25}?)(?:\s+\d|\s+on|\s+ref)', caseSensitive: false),
-      // "at STORE NAME"
       RegExp(r'at\s+([A-Z][A-Za-z\s&]{2,30}?)(?:\s+on|\s+for|\s+ref|\s*\.)', caseSensitive: false),
     ];
 
@@ -208,7 +190,6 @@ class TransactionParser {
       final match = pattern.firstMatch(msg);
       if (match != null) {
         final merchant = match.group(1)!.trim();
-        // Skip if it's a bank name or generic word
         if (!_isGenericWord(merchant)) return merchant;
       }
     }
@@ -222,7 +203,6 @@ class TransactionParser {
     final match = pattern.firstMatch(msg);
     if (match != null) return match.group(1);
 
-    // Also try standalone UPI pattern
     final upiPattern = RegExp(r'([a-zA-Z0-9._-]+@(?:upi|ybl|okhdfcbank|okicici|oksbi|apl|axl|paytm|ibl|axisbank|icici))', caseSensitive: false);
     final upiMatch = upiPattern.firstMatch(msg);
     if (upiMatch != null) return upiMatch.group(1);
@@ -245,12 +225,59 @@ class TransactionParser {
     return null;
   }
 
-  /// Detect card type (credit card vs debit card)
+  /// Detect card type
   static String? _extractCardType(String msg) {
     final lower = msg.toLowerCase();
     if (lower.contains('credit card')) return 'credit_card';
     if (lower.contains('debit card')) return 'debit_card';
     if (RegExp(r'card\s*(?:ending|xx|\*)', caseSensitive: false).hasMatch(lower)) return 'card';
+    return null;
+  }
+
+  /// Try to extract a date from the SMS body (e.g., "on 20-03-26", "on 26-Mar-26")
+  static DateTime? _extractDateFromMessage(String msg) {
+    // "on 20-03-26" or "on 20/03/26" or "on 20-03-2026"
+    final patterns = [
+      RegExp(r'on\s+(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})', caseSensitive: false),
+      RegExp(r'on\s+(\d{1,2})[-\s](\w{3})[-\s](\d{2,4})', caseSensitive: false),
+      RegExp(r'(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})'),
+    ];
+
+    final monthNames = {
+      'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
+      'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12,
+    };
+
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(msg);
+      if (match != null) {
+        try {
+          final g1 = match.group(1)!;
+          final g2 = match.group(2)!;
+          final g3 = match.group(3)!;
+
+          int day, month, year;
+
+          // Check if g2 is a month name
+          final monthNum = monthNames[g2.toLowerCase()];
+          if (monthNum != null) {
+            day = int.parse(g1);
+            month = monthNum;
+            year = int.parse(g3);
+          } else {
+            day = int.parse(g1);
+            month = int.parse(g2);
+            year = int.parse(g3);
+          }
+
+          if (year < 100) year += 2000;
+          if (day > 0 && day <= 31 && month > 0 && month <= 12) {
+            return DateTime(year, month, day);
+          }
+        } catch (_) {}
+      }
+    }
+
     return null;
   }
 
@@ -274,6 +301,7 @@ class TransactionParseResult {
   final String? refNumber;
   final String? cardType;
   final String rawMessage;
+  final DateTime? date;
 
   TransactionParseResult({
     required this.type,
@@ -285,6 +313,7 @@ class TransactionParseResult {
     this.refNumber,
     this.cardType,
     required this.rawMessage,
+    this.date,
   });
 
   bool get isCredit => type == 'credit';
@@ -294,7 +323,6 @@ class TransactionParseResult {
   String get suggestedTitle {
     if (merchant != null && merchant!.isNotEmpty) return merchant!;
     if (upiId != null) {
-      // Extract name from UPI ID: "merchant@bank" -> "Merchant"
       final name = upiId!.split('@').first.replaceAll(RegExp(r'[._-]'), ' ');
       if (name.length > 2) {
         return name.split(' ').map((w) =>
@@ -312,55 +340,38 @@ class TransactionParseResult {
     final upiLower = (upiId ?? '').toLowerCase();
     final combined = '$merchantLower $upiLower';
 
-    // Food & dining
     if (_matchesAny(combined, ['swiggy', 'zomato', 'dominos', 'pizza', 'restaurant',
       'cafe', 'food', 'kitchen', 'biryani', 'burger', 'mcdonald', 'kfc', 'subway'])) {
       return 'Food';
     }
-
-    // Transport
     if (_matchesAny(combined, ['uber', 'ola', 'rapido', 'metro', 'irctc', 'railway',
       'petrol', 'fuel', 'parking', 'toll', 'fastag'])) {
       return 'Transport';
     }
-
-    // Shopping
     if (_matchesAny(combined, ['amazon', 'flipkart', 'myntra', 'ajio', 'meesho',
       'nykaa', 'mall', 'store', 'shop', 'market', 'bigbasket', 'blinkit', 'zepto'])) {
       return 'Shopping';
     }
-
-    // Groceries
     if (_matchesAny(combined, ['dmart', 'bigbasket', 'blinkit', 'zepto', 'dunzo',
       'grofers', 'jiomart', 'grocery', 'supermarket', 'kirana'])) {
       return 'Groceries';
     }
-
-    // Bills & recharges
     if (_matchesAny(combined, ['airtel', 'jio', 'vi ', 'vodafone', 'bsnl',
       'electricity', 'water', 'gas', 'broadband', 'wifi', 'recharge', 'bill'])) {
       return 'Bills';
     }
-
-    // Entertainment
     if (_matchesAny(combined, ['netflix', 'hotstar', 'prime', 'spotify', 'youtube',
       'bookmyshow', 'pvr', 'inox', 'movie', 'game', 'steam'])) {
       return 'Entertainment';
     }
-
-    // Health
     if (_matchesAny(combined, ['pharmacy', 'medical', 'hospital', 'clinic', 'doctor',
       'apollo', 'medplus', 'netmeds', 'pharmeasy', '1mg'])) {
       return 'Health';
     }
-
-    // Subscriptions
     if (_matchesAny(combined, ['subscription', 'premium', 'plan', 'membership',
       'annual', 'monthly', 'renewal'])) {
       return 'Subscriptions';
     }
-
-    // Education
     if (_matchesAny(combined, ['school', 'college', 'university', 'course', 'udemy',
       'coursera', 'tuition', 'coaching', 'book', 'education'])) {
       return 'Education';
@@ -386,6 +397,6 @@ class TransactionParseResult {
   @override
   String toString() {
     return 'TransactionParseResult(type: $type, amount: $amount, bank: $bankName, '
-        'account: $accountLast4, merchant: $merchant, upi: $upiId, ref: $refNumber)';
+        'account: $accountLast4, merchant: $merchant, upi: $upiId, ref: $refNumber, date: $date)';
   }
 }

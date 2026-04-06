@@ -328,7 +328,7 @@ class AddSplitView extends GetView<SplitController> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Get.back(),
+            onTap: () => Navigator.of(Get.context!).pop(),
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: NeoBrutalismTheme.neoBox(
@@ -413,6 +413,6 @@ class AddSplitView extends GetView<SplitController> {
     );
 
     controller.addSplit(split);
-    Get.back();
+    Navigator.of(Get.context!).pop();
   }
 }

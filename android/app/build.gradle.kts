@@ -17,6 +17,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
+    aaptOptions {
+        noCompress += "tflite"
+    }
+
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_11.toString()
     }

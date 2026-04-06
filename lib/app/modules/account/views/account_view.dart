@@ -107,7 +107,7 @@ class AccountView extends GetView<AccountController> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Get.back(),
+            onTap: () => Navigator.of(Get.context!).pop(),
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: NeoBrutalismTheme.neoBox(
@@ -352,7 +352,7 @@ class AccountView extends GetView<AccountController> {
             NeoButton(
               text: 'EDIT ACCOUNT',
               onPressed: () {
-                Get.back();
+                Navigator.of(Get.context!).pop();
                 Get.toNamed('/add-account', arguments: account);
               },
               color: NeoBrutalismTheme.accentSkyBlue,
@@ -363,7 +363,7 @@ class AccountView extends GetView<AccountController> {
               text: 'SET AS DEFAULT',
               onPressed: () {
                 _setAsDefault(account);
-                Get.back();
+                Navigator.of(Get.context!).pop();
               },
               color: NeoBrutalismTheme.accentGreen,
               icon: Icons.star,
@@ -372,7 +372,7 @@ class AccountView extends GetView<AccountController> {
             NeoButton(
               text: 'TRANSFER MONEY',
               onPressed: () {
-                Get.back();
+                Navigator.of(Get.context!).pop();
                 _showTransferDialog(account, isDark);
               },
               color: NeoBrutalismTheme.accentPurple,
@@ -383,7 +383,7 @@ class AccountView extends GetView<AccountController> {
               NeoButton(
                 text: 'DELETE ACCOUNT',
                 onPressed: () {
-                  Get.back();
+                  Navigator.of(Get.context!).pop();
                   _confirmDelete(account, isDark);
                 },
                 color: NeoBrutalismTheme.accentPink,
@@ -485,7 +485,7 @@ class AccountView extends GetView<AccountController> {
                   Expanded(
                     child: NeoButton(
                       text: 'CANCEL',
-                      onPressed: () => Get.back(),
+                      onPressed: () => Navigator.of(Get.context!).pop(),
                       color: NeoBrutalismTheme.primaryWhite,
                       textColor: NeoBrutalismTheme.primaryBlack,
                     ),
@@ -496,7 +496,7 @@ class AccountView extends GetView<AccountController> {
                       text: 'DELETE',
                       onPressed: () {
                         controller.deleteAccount(account.id);
-                        Get.back();
+                        Navigator.of(Get.context!).pop();
                       },
                       color: Colors.red[400]!,
                     ),
@@ -642,7 +642,7 @@ class AccountView extends GetView<AccountController> {
                     Expanded(
                       child: NeoButton(
                         text: 'CANCEL',
-                        onPressed: () => Get.back(),
+                        onPressed: () => Navigator.of(Get.context!).pop(),
                         color: NeoBrutalismTheme.primaryWhite,
                         textColor: NeoBrutalismTheme.primaryBlack,
                       ),
@@ -675,7 +675,7 @@ class AccountView extends GetView<AccountController> {
                           );
 
                           controller.addTransfer(transfer);
-                          Get.back();
+                          Navigator.of(Get.context!).pop();
                         },
                         color: NeoBrutalismTheme.accentGreen,
                       ),

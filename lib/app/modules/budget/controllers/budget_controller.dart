@@ -13,8 +13,8 @@ class BudgetController extends GetxController {
   final RxList<BudgetModel> budgets = <BudgetModel>[].obs;
   final RxBool isLoading = false.obs;
 
-  late final ExpenseController expenseController;
-  late final CategoryController categoryController;
+  final ExpenseController expenseController = Get.find<ExpenseController>();
+  final CategoryController categoryController = Get.find<CategoryController>();
   late final PeriodService periodService;
   final NotificationService _notif = NotificationService();
   final Map<String, int> _lastAlertLevel = {};
@@ -22,8 +22,6 @@ class BudgetController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    expenseController = Get.find<ExpenseController>();
-    categoryController = Get.find<CategoryController>();
     periodService = Get.find<PeriodService>();
     loadBudgets();
     ever(expenseController.expenses, (_) => _checkAllAlerts());

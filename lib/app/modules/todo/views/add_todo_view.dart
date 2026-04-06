@@ -90,11 +90,11 @@ class _AddTodoViewState extends State<AddTodoView> {
       isCompleted: _isEditMode ? _editingTodo!.isCompleted : false,
     );
     if (_isEditMode) {
-      todoController.updateTodo(todo); Get.back();
+      todoController.updateTodo(todo); Navigator.of(Get.context!).pop();
       Get.snackbar('Updated', 'Todo updated!', backgroundColor: NeoBrutalismTheme.accentBlue,
           colorText: NeoBrutalismTheme.primaryBlack, borderWidth: 3, borderColor: NeoBrutalismTheme.primaryBlack);
     } else {
-      todoController.addTodo(todo); Get.back();
+      todoController.addTodo(todo); Navigator.of(Get.context!).pop();
       Get.snackbar('Created', 'Todo added!', backgroundColor: NeoBrutalismTheme.accentGreen,
           colorText: NeoBrutalismTheme.primaryBlack, borderWidth: 3, borderColor: NeoBrutalismTheme.primaryBlack);
     }
@@ -316,7 +316,7 @@ class _AddTodoViewState extends State<AddTodoView> {
         NeoInput(controller: c, label: 'TAG NAME', hint: 'e.g., Work', isDark: isDark),
         const SizedBox(height: 20),
         Row(children: [
-          Expanded(child: NeoButton(text: 'CANCEL', onPressed: () => Get.back(),
+          Expanded(child: NeoButton(text: 'CANCEL', onPressed: () => Navigator.of(Get.context!).pop(),
               color: isDark ? NeoBrutalismTheme.darkBackground : NeoBrutalismTheme.primaryWhite)),
           const SizedBox(width: 12),
           Expanded(child: NeoButton(text: 'ADD', onPressed: () => Get.back(result: c.text.trim()),

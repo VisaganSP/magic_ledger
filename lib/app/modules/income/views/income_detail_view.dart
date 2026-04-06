@@ -1,182 +1,71 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 
 import '../../../data/models/income_model.dart';
 import '../../../theme/neo_brutalism_theme.dart';
 import '../../../widgets/neo_button.dart';
 import '../../../widgets/neo_card.dart';
+import '../../account/controllers/account_controller.dart';
 import '../controllers/income_controller.dart';
 
 class IncomeDetailView extends StatelessWidget {
   final IncomeModel income = Get.arguments;
   final IncomeController incomeController = Get.find();
+  final AccountController accountController = Get.find();
 
   IncomeDetailView({super.key});
 
+  Color _t(Color c, bool d) => NeoBrutalismTheme.getThemedColor(c, d);
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final account = accountController.getAccountForDisplay(income.accountId);
+
     return Scaffold(
-      backgroundColor: NeoBrutalismTheme.primaryWhite,
-      appBar: _buildAppBar(context),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildMainInfo(),
-          const SizedBox(height: 24),
-          _buildDetailsSection(),
-          const SizedBox(height: 32),
-          _buildActionButtons(context),
-        ],
-      ),
-    );
-  }
+      backgroundColor: isDark
+          ? NeoBrutalismTheme.darkBackground
+          : NeoBrutalismTheme.lightBackground,
+      body: CustomScrollView(
+        slivers: [
+          // ═══ HEADER ═══
+          SliverToBoxAdapter(child: _buildHeader(isDark)),
 
-  AppBar _buildAppBar(BuildContext context) {
-    return AppBar(
-      title: const Text(
-        'INCOME DETAILS',
-        style: TextStyle(fontWeight: FontWeight.w900),
-      ),
-      backgroundColor: NeoBrutalismTheme.accentGreen,
-      foregroundColor: NeoBrutalismTheme.primaryBlack,
-      elevation: 0,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.edit),
-          onPressed: () => _navigateToEdit(),
-        ),
-        IconButton(
-          icon: const Icon(Icons.delete),
-          onPressed: () => _showDeleteDialog(context),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMainInfo() {
-    return NeoCard(
-      color: NeoBrutalismTheme.accentGreen,
-      child: Column(
-        children: [
-          _buildIncomeHeader(),
-          const SizedBox(height: 16),
-          _buildDateDisplay(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIncomeHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                income.title,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  color: NeoBrutalismTheme.primaryBlack,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.account_balance_wallet,
-                    size: 24,
-                    color: NeoBrutalismTheme.primaryBlack,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      income.source,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: NeoBrutalismTheme.primaryBlack,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          // ═══ HERO CARD ═══
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: _buildHeroCard(account, isDark)
+                  .animate().fadeIn(delay: 100.ms).slideY(begin: 0.1, end: 0),
+            ),
           ),
-        ),
-        const SizedBox(width: 16),
-        _buildAmountDisplay(),
-      ],
-    );
-  }
 
-  Widget _buildAmountDisplay() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Text(
-          '+₹${income.amount.toStringAsFixed(2)}',
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w900,
-            color: NeoBrutalismTheme.primaryBlack,
+          // ═══ QUICK STATS ═══
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: _buildQuickStats(isDark)
+                  .animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
+            ),
           ),
-        ),
-        if (income.isRecurring) ...[
-          const SizedBox(height: 4),
-          _buildRecurringBadge(),
-        ],
-      ],
-    );
-  }
 
-  Widget _buildRecurringBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: NeoBrutalismTheme.accentPurple,
-        border: Border.all(color: NeoBrutalismTheme.primaryBlack, width: 2),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        income.recurringType?.toUpperCase() ?? 'RECURRING',
-        style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          color: NeoBrutalismTheme.primaryWhite,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDateDisplay() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: NeoBrutalismTheme.neoBox(
-        color: NeoBrutalismTheme.primaryWhite,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.calendar_today,
-            size: 20,
-            color: NeoBrutalismTheme.primaryBlack,
+          // ═══ DETAILS ═══
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: _buildDetailsCard(account, isDark)
+                  .animate().fadeIn(delay: 300.ms).slideY(begin: 0.1, end: 0),
+            ),
           ),
-          const SizedBox(width: 8),
-          Text(
-            _formatDate(income.date),
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: NeoBrutalismTheme.primaryBlack,
+
+          // ═══ ACTIONS ═══
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 40),
+              child: _buildActions(isDark)
+                  .animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0),
             ),
           ),
         ],
@@ -184,36 +73,203 @@ class IncomeDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailsSection() {
+  // ═══════════════════════════════════════════════════════════
+  // HEADER
+  // ═══════════════════════════════════════════════════════════
+
+  Widget _buildHeader(bool isDark) {
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(Get.context!).padding.top + 12,
+        left: 20, right: 20, bottom: 14,
+      ),
+      decoration: BoxDecoration(
+        color: isDark
+            ? NeoBrutalismTheme.darkSurface
+            : _t(NeoBrutalismTheme.accentGreen, isDark),
+        border: const Border(bottom: BorderSide(
+            color: NeoBrutalismTheme.primaryBlack, width: NeoBrutalismTheme.borderWidth)),
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.of(Get.context!).pop(),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: NeoBrutalismTheme.neoBox(
+                  color: isDark ? NeoBrutalismTheme.darkBackground : NeoBrutalismTheme.primaryWhite,
+                  offset: 3, borderColor: NeoBrutalismTheme.primaryBlack),
+              child: Icon(Icons.arrow_back, size: 20,
+                  color: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text('INCOME DETAILS', style: TextStyle(fontSize: 20,
+                fontWeight: FontWeight.w900, letterSpacing: -0.5,
+                color: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack)),
+          ),
+          GestureDetector(
+            onTap: _navigateToEdit,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: NeoBrutalismTheme.neoBox(
+                  color: isDark ? NeoBrutalismTheme.darkBackground : NeoBrutalismTheme.primaryWhite,
+                  offset: 3, borderColor: NeoBrutalismTheme.primaryBlack),
+              child: Icon(Icons.edit, size: 20,
+                  color: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack),
+            ),
+          ),
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: () => _showDeleteDialog(isDark),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: NeoBrutalismTheme.neoBox(
+                  color: Colors.red, offset: 3,
+                  borderColor: NeoBrutalismTheme.primaryBlack),
+              child: const Icon(Icons.delete, size: 20, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 300.ms).slideY(begin: -0.2, end: 0);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // HERO CARD
+  // ═══════════════════════════════════════════════════════════
+
+  Widget _buildHeroCard(dynamic account, bool isDark) {
     return NeoCard(
+      color: _t(NeoBrutalismTheme.accentGreen, isDark),
+      borderColor: NeoBrutalismTheme.primaryBlack,
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          // Amount
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              '+₹${income.amount.toStringAsFixed(2)}',
+              style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w900,
+                  color: NeoBrutalismTheme.primaryBlack, letterSpacing: -1),
+            ),
+          ).animate().scale(delay: 150.ms, duration: 400.ms,
+              begin: const Offset(0.8, 0.8), end: const Offset(1, 1),
+              curve: Curves.elasticOut),
+          const SizedBox(height: 12),
+
+          // Title
+          Text(income.title, style: const TextStyle(fontSize: 20,
+              fontWeight: FontWeight.w800, color: NeoBrutalismTheme.primaryBlack),
+              textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 12),
+
+          // Info chips
+          Wrap(
+            spacing: 8, runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: [
+              _buildChip('💼 ${income.source}', isDark),
+              if (income.accountId != null)
+                _buildChip('${account.icon} ${account.name}', isDark),
+              _buildChip('📅 ${_fmtDate(income.date)}', isDark),
+              if (income.isRecurring)
+                _buildChip('🔄 ${income.recurringType?.toUpperCase() ?? 'RECURRING'}', isDark,
+                    color: _t(NeoBrutalismTheme.accentPurple, isDark)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChip(String text, bool isDark, {Color? color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+          color: color ?? (isDark ? NeoBrutalismTheme.darkBackground : NeoBrutalismTheme.primaryWhite),
+          border: Border.all(color: NeoBrutalismTheme.primaryBlack, width: 1.5),
+          borderRadius: BorderRadius.circular(4)),
+      child: Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800,
+          color: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack)),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // QUICK STATS
+  // ═══════════════════════════════════════════════════════════
+
+  Widget _buildQuickStats(bool isDark) {
+    final dayOfWeek = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][income.date.weekday - 1];
+    final timeStr = '${income.date.hour.toString().padLeft(2, '0')}:${income.date.minute.toString().padLeft(2, '0')}';
+
+    return Row(
+      children: [
+        Expanded(child: _buildStatCard('DAY', dayOfWeek.toUpperCase(), Icons.calendar_today, isDark)),
+        const SizedBox(width: 10),
+        Expanded(child: _buildStatCard('TIME', timeStr, Icons.access_time, isDark)),
+        const SizedBox(width: 10),
+        Expanded(child: _buildStatCard('SOURCE', income.source.length > 8
+            ? '${income.source.substring(0, 8)}...' : income.source.toUpperCase(),
+            Icons.account_balance_wallet, isDark)),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(String label, String value, IconData icon, bool isDark) {
+    return NeoCard(
+      color: isDark ? NeoBrutalismTheme.darkSurface : NeoBrutalismTheme.primaryWhite,
+      borderColor: NeoBrutalismTheme.primaryBlack,
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        children: [
+          Icon(icon, size: 18, color: isDark ? Colors.grey[500] : Colors.grey[600]),
+          const SizedBox(height: 6),
+          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900,
+              color: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack),
+              textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 2),
+          Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700,
+              letterSpacing: 0.5, color: isDark ? Colors.grey[600] : Colors.grey[500])),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // DETAILS CARD
+  // ═══════════════════════════════════════════════════════════
+
+  Widget _buildDetailsCard(dynamic account, bool isDark) {
+    return NeoCard(
+      color: isDark ? NeoBrutalismTheme.darkSurface : NeoBrutalismTheme.primaryWhite,
+      borderColor: NeoBrutalismTheme.primaryBlack,
+      padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'DETAILS',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: NeoBrutalismTheme.primaryBlack,
-            ),
-          ),
-          const SizedBox(height: 16),
+          Text('DETAILS', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900,
+              letterSpacing: 0.5,
+              color: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack)),
+          const SizedBox(height: 14),
           if (income.description != null && income.description!.isNotEmpty)
-            _buildDetailRow('Description', income.description!),
-          _buildDetailRow('Source', income.source),
-          _buildDetailRow(
-            'Type',
-            income.isRecurring ? 'Recurring' : 'One-time',
-          ),
+            _buildDetailRow('Description', income.description!, isDark),
+          _buildDetailRow('Source', income.source, isDark),
+          if (income.accountId != null)
+            _buildDetailRow('Account', '${account.icon} ${account.name}', isDark),
+          _buildDetailRow('Amount', '₹${income.amount.toStringAsFixed(2)}', isDark),
+          _buildDetailRow('Date', _fmtDateFull(income.date), isDark),
+          _buildDetailRow('Type', income.isRecurring ? 'Recurring' : 'One-time', isDark),
           if (income.isRecurring)
-            _buildDetailRow('Frequency', _getFormattedFrequency()),
-          _buildDetailRow('Created', _formatDateTime(income.date)),
+            _buildDetailRow('Frequency', _getFormattedFrequency(), isDark),
         ],
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(String label, String value, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -221,74 +277,78 @@ class IncomeDetailView extends StatelessWidget {
         children: [
           SizedBox(
             width: 100,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-                fontSize: 14,
-              ),
-            ),
+            child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800,
+                color: isDark ? Colors.grey[500] : Colors.grey[500])),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: NeoBrutalismTheme.primaryBlack,
-              ),
-            ),
+            child: Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
+                color: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
+  // ═══════════════════════════════════════════════════════════
+  // ACTIONS
+  // ═══════════════════════════════════════════════════════════
+
+  Widget _buildActions(bool isDark) {
     return Column(
       children: [
         Row(
           children: [
             Expanded(
-              child: NeoButton(
-                text: 'DUPLICATE',
-                onPressed: _duplicateIncome,
-                color: NeoBrutalismTheme.accentBlue,
-                icon: Icons.copy,
-              ),
+              child: _buildActionButton('DUPLICATE', Icons.copy,
+                  _t(NeoBrutalismTheme.accentSkyBlue, isDark), _duplicateIncome, isDark),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 10),
             Expanded(
-              child: NeoButton(
-                text: 'SHARE',
-                onPressed: () => _shareIncome(context),
-                color: NeoBrutalismTheme.accentPurple,
-                icon: Icons.share,
-              ),
+              child: _buildActionButton('SHARE', Icons.share,
+                  _t(NeoBrutalismTheme.accentPurple, isDark), _shareIncome, isDark),
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
-          child: NeoButton(
-            text: 'EDIT INCOME',
-            onPressed: _navigateToEdit,
-            color: NeoBrutalismTheme.accentGreen,
-            icon: Icons.edit,
-          ),
+          child: _buildActionButton('EDIT INCOME', Icons.edit,
+              _t(NeoBrutalismTheme.accentGreen, isDark), _navigateToEdit, isDark),
         ),
       ],
     );
   }
+
+  Widget _buildActionButton(String text, IconData icon, Color color, VoidCallback onTap, bool isDark) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: NeoBrutalismTheme.neoBox(
+            color: color, offset: 4, borderColor: NeoBrutalismTheme.primaryBlack),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: NeoBrutalismTheme.primaryBlack),
+            const SizedBox(width: 8),
+            Text(text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900,
+                color: NeoBrutalismTheme.primaryBlack, letterSpacing: 0.3)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // LOGIC
+  // ═══════════════════════════════════════════════════════════
 
   void _navigateToEdit() {
     Get.toNamed('/add-income', arguments: {'income': income, 'isEdit': true});
   }
 
   void _duplicateIncome() {
-    final duplicatedIncome = IncomeModel(
+    final dup = IncomeModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       title: '${income.title} (Copy)',
       amount: income.amount,
@@ -297,180 +357,90 @@ class IncomeDetailView extends StatelessWidget {
       description: income.description,
       isRecurring: income.isRecurring,
       recurringType: income.recurringType,
+      accountId: income.accountId,
     );
+    incomeController.addIncome(dup);
+    Get.snackbar('✅ Duplicated', '"${income.title}" copied',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green[100], colorText: Colors.green[900],
+        borderWidth: 2, borderColor: Colors.green[700]!,
+        margin: const EdgeInsets.all(12));
+  }
 
-    incomeController.addIncome(duplicatedIncome);
+  void _shareIncome() {
+    final text = [
+      'Income: ${income.title}',
+      'Amount: ₹${income.amount.toStringAsFixed(2)}',
+      'Source: ${income.source}',
+      'Date: ${_fmtDateFull(income.date)}',
+      if (income.description != null) 'Note: ${income.description}',
+      '', '— Magic Ledger',
+    ].join('\n');
+    Clipboard.setData(ClipboardData(text: text));
+    Get.snackbar('📋 Copied', 'Income details copied to clipboard',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.blue[100], colorText: Colors.blue[900],
+        margin: const EdgeInsets.all(12));
+  }
 
-    Get.snackbar(
-      'Income Duplicated',
-      'A copy of "${income.title}" has been created',
-      backgroundColor: NeoBrutalismTheme.accentGreen,
-      colorText: NeoBrutalismTheme.primaryBlack,
-      borderWidth: 3,
-      borderColor: NeoBrutalismTheme.primaryBlack,
-      duration: const Duration(seconds: 2),
-      mainButton: TextButton(
-        onPressed: () {
-          Get.back();
-          Get.to(() => IncomeDetailView(), arguments: duplicatedIncome);
-        },
-        child: const Text(
-          'VIEW',
-          style: TextStyle(
-            color: NeoBrutalismTheme.primaryBlack,
-            fontWeight: FontWeight.bold,
+  void _showDeleteDialog(bool isDark) {
+    Get.dialog(Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: NeoBrutalismTheme.neoBoxRounded(
+            color: isDark ? NeoBrutalismTheme.darkSurface : NeoBrutalismTheme.primaryWhite,
+            borderColor: NeoBrutalismTheme.primaryBlack),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            width: 56, height: 56,
+            decoration: NeoBrutalismTheme.neoBox(
+                color: Colors.red, offset: 3, borderColor: NeoBrutalismTheme.primaryBlack),
+            child: const Icon(Icons.delete_forever, size: 28, color: Colors.white),
           ),
-        ),
+          const SizedBox(height: 16),
+          Text('DELETE INCOME?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900,
+              color: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack)),
+          const SizedBox(height: 8),
+          Text('"${income.title}" will be permanently removed.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+          const SizedBox(height: 20),
+          Row(children: [
+            Expanded(child: NeoButton(text: 'CANCEL',
+                onPressed: () => Navigator.of(Get.context!).pop(),
+                color: isDark ? NeoBrutalismTheme.darkBackground : NeoBrutalismTheme.primaryWhite,
+                textColor: isDark ? NeoBrutalismTheme.darkText : NeoBrutalismTheme.primaryBlack)),
+            const SizedBox(width: 12),
+            Expanded(child: NeoButton(text: 'DELETE', onPressed: () {
+              incomeController.deleteIncome(income.id);
+              Navigator.of(Get.context!).pop();
+              Navigator.of(Get.context!).pop();
+              Get.snackbar('🗑️ Deleted', '${income.title} removed',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.red[100], colorText: Colors.red[900],
+                  margin: const EdgeInsets.all(12));
+            }, color: Colors.red, textColor: Colors.white)),
+          ]),
+        ]),
       ),
-    );
+    ));
   }
 
-  void _shareIncome(BuildContext context) {
-    final shareText =
-        '''
-Income: ${income.title}
-Amount: ₹${income.amount.toStringAsFixed(2)}
-Source: ${income.source}
-Date: ${_formatDate(income.date)}
-Type: ${income.isRecurring ? 'Recurring (${income.recurringType})' : 'One-time'}
-${income.description != null ? '\nDescription: ${income.description}' : ''}
-
-Shared from Magic Ledger App
-    '''.trim();
-
-    // Copy to clipboard
-    Clipboard.setData(ClipboardData(text: shareText));
-
-    Get.snackbar(
-      'Share Income',
-      'Income details copied to clipboard',
-      backgroundColor: NeoBrutalismTheme.accentPurple,
-      colorText: NeoBrutalismTheme.primaryWhite,
-      borderWidth: 3,
-      borderColor: NeoBrutalismTheme.primaryBlack,
-      duration: const Duration(seconds: 2),
-      icon: const Icon(
-        Icons.check_circle,
-        color: NeoBrutalismTheme.primaryWhite,
-      ),
-    );
-  }
-
-  void _showDeleteDialog(BuildContext context) {
-    Get.dialog(
-      Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: NeoBrutalismTheme.neoBoxRounded(
-            color: NeoBrutalismTheme.primaryWhite,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.warning_amber_rounded,
-                size: 64,
-                color: Colors.orange,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'DELETE INCOME?',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  color: NeoBrutalismTheme.primaryBlack,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Are you sure you want to delete "${income.title}"?',
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: NeoBrutalismTheme.primaryBlack,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'This action cannot be undone.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: NeoButton(
-                      text: 'CANCEL',
-                      onPressed: () => Get.back(),
-                      color: NeoBrutalismTheme.primaryWhite,
-                      textColor: NeoBrutalismTheme.primaryBlack,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: NeoButton(
-                      text: 'DELETE',
-                      onPressed: () {
-                        incomeController.deleteIncome(income.id);
-                        Get.back(); // Close dialog
-                        Get.back(); // Go back to previous screen
-                        Get.snackbar(
-                          'Income Deleted',
-                          '${income.title} has been removed',
-                          backgroundColor: Colors.red,
-                          colorText: NeoBrutalismTheme.primaryWhite,
-                          borderWidth: 3,
-                          borderColor: NeoBrutalismTheme.primaryBlack,
-                          duration: const Duration(seconds: 2),
-                          icon: const Icon(
-                            Icons.delete_forever,
-                            color: NeoBrutalismTheme.primaryWhite,
-                          ),
-                        );
-                      },
-                      color: Colors.red,
-                      textColor: NeoBrutalismTheme.primaryWhite,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
-  }
-
-  String _formatDateTime(DateTime date) {
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-    return '${_formatDate(date)} at $hour:$minute';
+  String _fmtDate(DateTime d) => '${d.day}/${d.month}/${d.year}';
+  String _fmtDateFull(DateTime d) {
+    final h = d.hour.toString().padLeft(2, '0');
+    final m = d.minute.toString().padLeft(2, '0');
+    return '${d.day}/${d.month}/${d.year} at $h:$m';
   }
 
   String _getFormattedFrequency() {
-    if (income.recurringType == null) return 'N/A';
-
-    switch (income.recurringType!.toLowerCase()) {
-      case 'daily':
-        return 'Every Day';
-      case 'weekly':
-        return 'Every Week';
-      case 'monthly':
-        return 'Every Month';
-      case 'yearly':
-        return 'Every Year';
-      default:
-        return income.recurringType!.toUpperCase();
+    switch (income.recurringType?.toLowerCase()) {
+      case 'daily': return 'Every Day';
+      case 'weekly': return 'Every Week';
+      case 'monthly': return 'Every Month';
+      case 'yearly': return 'Every Year';
+      default: return income.recurringType?.toUpperCase() ?? 'N/A';
     }
   }
 }

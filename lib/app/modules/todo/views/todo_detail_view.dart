@@ -350,11 +350,11 @@ class _TodoDetailViewState extends State<TodoDetailView> {
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900), textAlign: TextAlign.center),
         const SizedBox(height: 16),
         Row(children: [
-          Expanded(child: NeoButton(text: 'CANCEL', onPressed: () => Get.back(),
+          Expanded(child: NeoButton(text: 'CANCEL', onPressed: () => Navigator.of(Get.context!).pop(),
               color: NeoBrutalismTheme.primaryWhite)),
           const SizedBox(width: 12),
           Expanded(child: NeoButton(text: 'DELETE', onPressed: () {
-            ctrl.deleteTodo(todo.id); Get.back(); Get.back();
+            ctrl.deleteTodo(todo.id); Navigator.of(Get.context!).pop(); Navigator.of(Get.context!).pop();
           }, color: Colors.red, textColor: Colors.white)),
         ]),
       ]),

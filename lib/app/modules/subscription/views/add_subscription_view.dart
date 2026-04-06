@@ -413,7 +413,7 @@ class AddSubscriptionView extends GetView<SubscriptionController> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Get.back(),
+            onTap: () => Navigator.of(Get.context!).pop(),
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: NeoBrutalismTheme.neoBox(
@@ -586,6 +586,6 @@ class AddSubscriptionView extends GetView<SubscriptionController> {
     } else {
       controller.addSubscription(sub);
     }
-    Get.back();
+    Navigator.of(Get.context!).pop();
   }
 }

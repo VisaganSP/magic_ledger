@@ -53,7 +53,7 @@ class _AddSavingsGoalViewState extends State<AddSavingsGoalView> {
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
     );
     ctrl.addGoal(goal);
-    Get.back();
+    Navigator.of(Get.context!).pop();
     Get.snackbar('Created!', '${goal.name} savings goal added',
         backgroundColor: NeoBrutalismTheme.accentGreen, colorText: NeoBrutalismTheme.primaryBlack,
         borderWidth: 3, borderColor: NeoBrutalismTheme.primaryBlack);

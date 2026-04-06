@@ -308,7 +308,7 @@ class HomeView extends GetView<HomeController> {
             NeoButton(
               text: 'ADD EXPENSE',
               onPressed: () {
-                Get.back();
+                Navigator.of(Get.context!).pop();
                 Get.toNamed('/add-expense');
               },
               color: _themedColor(NeoBrutalismTheme.accentOrange, isDark),
@@ -318,7 +318,7 @@ class HomeView extends GetView<HomeController> {
             NeoButton(
               text: 'ADD INCOME',
               onPressed: () {
-                Get.back();
+                Navigator.of(Get.context!).pop();
                 Get.toNamed('/add-income');
               },
               color: _themedColor(NeoBrutalismTheme.accentGreen, isDark),
@@ -328,7 +328,7 @@ class HomeView extends GetView<HomeController> {
             NeoButton(
               text: 'ADD TODO',
               onPressed: () {
-                Get.back();
+                Navigator.of(Get.context!).pop();
                 Get.toNamed('/add-todo');
               },
               color: _themedColor(NeoBrutalismTheme.accentPurple, isDark),
@@ -338,7 +338,7 @@ class HomeView extends GetView<HomeController> {
             NeoButton(
               text: 'ADD SAVINGS GOAL',
               onPressed: () {
-                Get.back();
+                Navigator.of(Get.context!).pop();
                 Get.toNamed('/add-savings-goal');
               },
               color: _themedColor(NeoBrutalismTheme.accentSkyBlue, isDark),
@@ -377,7 +377,7 @@ class HomeView extends GetView<HomeController> {
             NeoButton(
               text: 'EXPORT ALL (CSV)',
               onPressed: () {
-                Get.back();
+                Navigator.of(Get.context!).pop();
                 ExportService().exportAll(
                   expenses: controller.expenseController.expenses,
                   incomes: controller.incomeController.incomes,
@@ -392,7 +392,7 @@ class HomeView extends GetView<HomeController> {
             NeoButton(
               text: 'EXPORT EXPENSES ONLY',
               onPressed: () {
-                Get.back();
+                Navigator.of(Get.context!).pop();
                 ExportService().exportExpenses(
                   expenses: controller.expenseController.expenses,
                   categories: Get.find<CategoryController>().categories,
@@ -406,7 +406,7 @@ class HomeView extends GetView<HomeController> {
             NeoButton(
               text: 'EXPORT INCOMES ONLY',
               onPressed: () {
-                Get.back();
+                Navigator.of(Get.context!).pop();
                 ExportService().exportIncomes(
                   incomes: controller.incomeController.incomes,
                   accounts: controller.accountController.accounts,
@@ -640,7 +640,7 @@ class HomeView extends GetView<HomeController> {
                       onTap: isFuture
                           ? null
                           : () {
-                        Get.back();
+                        Navigator.of(Get.context!).pop();
                         Future.microtask(() {
                           periodService.goTo(currentTempYear, month);
                         });
@@ -702,9 +702,11 @@ class HomeView extends GetView<HomeController> {
 
   Widget _buildFinancialHero(bool isDark) {
     return Obx(() {
-      final bal = controller.balance.value;
       final inc = controller.totalIncome.value;
       final exp = controller.totalExpenses.value;
+      final netFlow = inc - exp;
+      // Real balance = total across all accounts
+      final bal = controller.accountController.getTotalBalance();
       final maxBar = inc > exp ? inc : (exp > 0 ? exp : 1);
 
       return NeoCard(
@@ -717,7 +719,7 @@ class HomeView extends GetView<HomeController> {
           children: [
             // Balance label
             Text(
-              'BALANCE',
+              'ACCOUNT BALANCE',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w900,
@@ -744,29 +746,58 @@ class HomeView extends GetView<HomeController> {
             ),
             const SizedBox(height: 4),
 
-            // Savings badge
-            if (inc > 0)
-              Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _getHealthColor(
-                      controller.savingsPercentage.value, isDark),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: NeoBrutalismTheme.primaryBlack,
-                    width: 1.5,
+            // Net flow badge
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: netFlow >= 0
+                        ? _themedColor(NeoBrutalismTheme.accentGreen, isDark)
+                        : _themedColor(NeoBrutalismTheme.accentPink, isDark),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: NeoBrutalismTheme.primaryBlack,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Text(
+                    'NET: ${netFlow >= 0 ? '+' : ''}${_formatCurrency(netFlow)}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      color: NeoBrutalismTheme.primaryBlack,
+                    ),
                   ),
                 ),
-                child: Text(
-                  '${controller.spendingHealth} • ${controller.savingsPercentage.value.toStringAsFixed(0)}% saved',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                    color: NeoBrutalismTheme.primaryBlack,
+                if (inc > 0) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _getHealthColor(
+                          controller.savingsPercentage.value, isDark),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: NeoBrutalismTheme.primaryBlack,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Text(
+                      '${controller.spendingHealth} • ${controller.savingsPercentage.value.toStringAsFixed(0)}%',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        color: NeoBrutalismTheme.primaryBlack,
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                ],
+              ],
+            ),
 
             const SizedBox(height: 20),
 
@@ -1115,17 +1146,18 @@ class HomeView extends GetView<HomeController> {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // 6. QUICK ACTIONS — compact row
+  // 6. QUICK ACTIONS — redesigned: primary row + feature strip
   // ═══════════════════════════════════════════════════════════
 
   Widget _buildQuickActions(bool isDark) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Existing row
+        // ── PRIMARY ACTIONS — the big 3 ──
         Row(
           children: [
             Expanded(
-              child: _buildQuickActionButton(
+              child: _buildPrimaryAction(
                 label: 'EXPENSE',
                 icon: Icons.remove_circle_outline,
                 color: _themedColor(NeoBrutalismTheme.accentOrange, isDark),
@@ -1135,7 +1167,7 @@ class HomeView extends GetView<HomeController> {
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: _buildQuickActionButton(
+              child: _buildPrimaryAction(
                 label: 'INCOME',
                 icon: Icons.add_circle_outline,
                 color: _themedColor(NeoBrutalismTheme.accentGreen, isDark),
@@ -1145,7 +1177,7 @@ class HomeView extends GetView<HomeController> {
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: _buildQuickActionButton(
+              child: _buildPrimaryAction(
                 label: 'TODO',
                 icon: Icons.task_alt,
                 color: _themedColor(NeoBrutalismTheme.accentBlue, isDark),
@@ -1153,113 +1185,61 @@ class HomeView extends GetView<HomeController> {
                 isDark: isDark,
               ),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildQuickActionButton(
-                label: 'TRANSFER',
-                icon: Icons.swap_horiz,
-                color: _themedColor(NeoBrutalismTheme.accentLilac, isDark),
-                onTap: () => Get.toNamed('/accounts'),
-                isDark: isDark,
-              ),
-            ),
           ],
         ),
-        // ═══ NEW: Second row for new features ═══
-        const SizedBox(height: 10),
+        const SizedBox(height: 16),
+
+        // ── TOOLS LABEL ──
         Row(
           children: [
-            Expanded(
-              child: _buildQuickActionButton(
-                label: 'SAVINGS',
-                icon: Icons.savings,
-                color: _themedColor(NeoBrutalismTheme.accentSkyBlue, isDark),
-                onTap: () => Get.toNamed('/savings'),
-                isDark: isDark,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildQuickActionButton(
-                label: 'DEBTS',
-                icon: Icons.account_balance,
-                color: _themedColor(NeoBrutalismTheme.accentPink, isDark),
-                onTap: () => Get.toNamed('/debt'),
-                isDark: isDark,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildQuickActionButton(
-                label: 'CALENDAR',
-                icon: Icons.calendar_month,
-                color: _themedColor(NeoBrutalismTheme.accentYellow, isDark),
-                onTap: () => Get.toNamed('/financial-calendar'),
-                isDark: isDark,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildQuickActionButton(
-                label: 'EXPORT',
-                icon: Icons.download,
-                color: _themedColor(NeoBrutalismTheme.accentSage, isDark),
-                onTap: () => _showExportSheet(isDark),
-                isDark: isDark,
-              ),
-            ),
-          ],
-        ),
-        // ═══ NEW: Third row for batch 2 features ═══
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _buildQuickActionButton(
-                label: 'INSIGHTS',
-                icon: Icons.insights,
+            Container(
+              width: 4, height: 16,
+              decoration: BoxDecoration(
                 color: _themedColor(NeoBrutalismTheme.accentPurple, isDark),
-                onTap: () => Get.toNamed('/insights'),
-                isDark: isDark,
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildQuickActionButton(
-                label: 'SPLIT',
-                icon: Icons.call_split,
-                color: _themedColor(NeoBrutalismTheme.accentLilac, isDark),
-                onTap: () => Get.toNamed('/splits'),
-                isDark: isDark,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildQuickActionButton(
-                label: 'SEARCH',
-                icon: Icons.search,
-                color: _themedColor(NeoBrutalismTheme.accentBeige, isDark),
-                onTap: () => Get.toNamed('/search'),
-                isDark: isDark,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildQuickActionButton(
-                label: 'SUBS',
-                icon: Icons.autorenew,
-                color: _themedColor(NeoBrutalismTheme.accentPink, isDark),
-                onTap: () => Get.toNamed('/subscriptions'),
-                isDark: isDark,
-              ),
-            ),
+            const SizedBox(width: 8),
+            Text('TOOLS', style: TextStyle(
+              fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1,
+              color: isDark ? Colors.grey[500] : Colors.grey[600],
+            )),
           ],
+        ),
+        const SizedBox(height: 10),
+
+        // ── SCROLLABLE FEATURE STRIP ──
+        SizedBox(
+          height: 42,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              _buildToolChip('Transfer', Icons.swap_horiz, NeoBrutalismTheme.accentLilac, () => Get.toNamed('/accounts'), isDark),
+              _buildToolChip('Savings', Icons.savings, NeoBrutalismTheme.accentSkyBlue, () => Get.toNamed('/savings'), isDark),
+              _buildToolChip('Debts', Icons.account_balance, NeoBrutalismTheme.accentPink, () => Get.toNamed('/debt'), isDark),
+              _buildToolChip('Calendar', Icons.calendar_month, NeoBrutalismTheme.accentYellow, () => Get.toNamed('/financial-calendar'), isDark),
+              _buildToolChip('Insights', Icons.insights, NeoBrutalismTheme.accentPurple, () => Get.toNamed('/insights'), isDark),
+              _buildToolChip('Split', Icons.call_split, NeoBrutalismTheme.accentLilac, () => Get.toNamed('/splits'), isDark),
+              _buildToolChip('Search', Icons.search, NeoBrutalismTheme.accentBeige, () => Get.toNamed('/search'), isDark),
+              _buildToolChip('Subs', Icons.autorenew, NeoBrutalismTheme.accentPink, () => Get.toNamed('/subscriptions'), isDark),
+              _buildToolChip('Coach', Icons.smart_toy, NeoBrutalismTheme.accentGreen, () => Get.toNamed('/money-coach'), isDark),
+              _buildToolChip('Story', Icons.auto_stories, NeoBrutalismTheme.accentPink, () => Get.toNamed('/money-story'), isDark),
+              _buildToolChip('Moods', Icons.mood, NeoBrutalismTheme.accentLilac, () => Get.toNamed('/mood-journal'), isDark),
+              _buildToolChip('What-If', Icons.tune, NeoBrutalismTheme.accentSkyBlue, () => Get.toNamed('/what-if'), isDark),
+              _buildToolChip('Export', Icons.download, NeoBrutalismTheme.accentSage, () => _showExportSheet(isDark), isDark),
+              _buildToolChip('Backup', Icons.cloud_upload, NeoBrutalismTheme.accentSkyBlue, () => Get.toNamed('/backup'), isDark),
+              _buildToolChip('Badges', Icons.emoji_events, NeoBrutalismTheme.accentYellow, () => Get.toNamed('/achievements'), isDark),
+              _buildToolChip('Quick', Icons.flash_on, NeoBrutalismTheme.accentBeige, () => Get.toNamed('/templates'), isDark),
+              const SizedBox(width: 8),
+            ],
+          ),
         ),
       ],
     ).animate().fadeIn(delay: 400.ms);
   }
 
-  Widget _buildQuickActionButton({
+  /// Big primary action button (Expense, Income, Todo)
+  Widget _buildPrimaryAction({
     required String label,
     required IconData icon,
     required Color color,
@@ -1269,26 +1249,51 @@ class HomeView extends GetView<HomeController> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: NeoBrutalismTheme.neoBox(
           color: color,
-          offset: 3,
+          offset: 4,
           borderColor: NeoBrutalismTheme.primaryBlack,
         ),
         child: Column(
           children: [
-            Icon(icon, size: 22, color: NeoBrutalismTheme.primaryBlack),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w900,
-                color: NeoBrutalismTheme.primaryBlack,
-                letterSpacing: 0.5,
-              ),
-            ),
+            Icon(icon, size: 26, color: NeoBrutalismTheme.primaryBlack),
+            const SizedBox(height: 6),
+            Text(label, style: const TextStyle(
+              fontSize: 11, fontWeight: FontWeight.w900,
+              color: NeoBrutalismTheme.primaryBlack, letterSpacing: 0.5,
+            )),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Compact horizontal tool chip
+  Widget _buildToolChip(String label, IconData icon, Color color,
+      VoidCallback onTap, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: NeoBrutalismTheme.neoBox(
+            color: _themedColor(color, isDark),
+            offset: 2,
+            borderColor: NeoBrutalismTheme.primaryBlack,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: NeoBrutalismTheme.primaryBlack),
+              const SizedBox(width: 6),
+              Text(label, style: const TextStyle(
+                fontSize: 11, fontWeight: FontWeight.w800,
+                color: NeoBrutalismTheme.primaryBlack,
+              )),
+            ],
+          ),
         ),
       ),
     );
@@ -1394,7 +1399,6 @@ class HomeView extends GetView<HomeController> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
         children: [
-          // Category icon
           Container(
             width: 40,
             height: 40,
@@ -1410,7 +1414,6 @@ class HomeView extends GetView<HomeController> {
             ),
           ),
           const SizedBox(width: 12),
-          // Details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1428,33 +1431,19 @@ class HomeView extends GetView<HomeController> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Row(
-                  children: [
-                    Text(
-                      category.name,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.grey[500] : Colors.grey[600],
-                      ),
-                    ),
-                    if (expense.accountId != null) ...[
-                      Text(
-                        ' • ${account.icon} ${account.name}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: isDark ? Colors.grey[600] : Colors.grey[500],
-                        ),
-                      ),
-                    ],
-                    Text(
-                      ' • ${expense.date.day}/${expense.date.month}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark ? Colors.grey[600] : Colors.grey[500],
-                      ),
-                    ),
-                  ],
+                Text(
+                  [
+                    category.name,
+                    if (expense.accountId != null) '${account.icon} ${account.name}',
+                    '${expense.date.day}/${expense.date.month}',
+                  ].join(' • '),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.grey[500] : Colors.grey[600],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -1519,33 +1508,19 @@ class HomeView extends GetView<HomeController> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Row(
-                  children: [
-                    Text(
-                      income.source,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.grey[500] : Colors.grey[600],
-                      ),
-                    ),
-                    if (income.accountId != null) ...[
-                      Text(
-                        ' • ${account.icon} ${account.name}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: isDark ? Colors.grey[600] : Colors.grey[500],
-                        ),
-                      ),
-                    ],
-                    Text(
-                      ' • ${income.date.day}/${income.date.month}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark ? Colors.grey[600] : Colors.grey[500],
-                      ),
-                    ),
-                  ],
+                Text(
+                  [
+                    income.source,
+                    if (income.accountId != null) '${account.icon} ${account.name}',
+                    '${income.date.day}/${income.date.month}',
+                  ].join(' • '),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.grey[500] : Colors.grey[600],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -1599,7 +1574,7 @@ class HomeView extends GetView<HomeController> {
                     ),
                   )),
                   GestureDetector(
-                    onTap: () => Get.back(),
+                    onTap: () => Navigator.of(Get.context!).pop(),
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: NeoBrutalismTheme.neoBox(

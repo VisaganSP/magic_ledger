@@ -407,4 +407,11 @@ class AccountController extends GetxController {
     const Color(0xFFF5E6D3), // Beige
     const Color(0xFF4DB6AC), // Teal
   ];
+
+  /// Trigger UI refresh after adding transactions from notifications
+  void adjustBalance(String accountId, double delta) {
+    // Balance is computed dynamically from Hive data,
+    // so we just need to trigger a reactive refresh
+    accounts.refresh();
+  }
 }

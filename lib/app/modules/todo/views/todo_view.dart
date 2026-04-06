@@ -467,7 +467,7 @@ class TodoView extends GetView<TodoController> {
     return Expanded(child: GestureDetector(
       onTap: () {
         controller.snoozeTodo(todo, dur);
-        Get.back();
+        Navigator.of(Get.context!).pop();
         Get.snackbar('Snoozed', '${todo.title} snoozed: $label',
             backgroundColor: const Color(0xFFBFE3F0),
             colorText: NeoBrutalismTheme.primaryBlack,
@@ -550,7 +550,7 @@ class TodoView extends GetView<TodoController> {
           const SizedBox(height: 24),
           NeoButton(text: 'SET GOAL', onPressed: () {
             controller.setDailyGoal(goal);
-            Get.back();
+            Navigator.of(Get.context!).pop();
           }, color: NeoBrutalismTheme.getThemedColor(NeoBrutalismTheme.accentGreen, isDark)),
         ]),
       )),

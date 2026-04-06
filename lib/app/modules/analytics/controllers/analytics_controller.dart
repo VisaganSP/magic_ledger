@@ -12,7 +12,7 @@ class AnalyticsController extends GetxController {
   final ExpenseController expenseController = Get.find();
   final CategoryController categoryController = Get.find();
   final IncomeController incomeController = Get.find();
-  late final AccountController accountController;
+  final AccountController accountController = Get.find<AccountController>();
   late final PeriodService periodService;
 
   // Period selection for analytics (separate from home period)
@@ -60,7 +60,6 @@ class AnalyticsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    accountController = Get.find<AccountController>();
     periodService = Get.find<PeriodService>();
 
     ever(selectedPeriod, (_) => updateAnalytics());
